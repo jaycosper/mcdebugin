@@ -16,7 +16,7 @@ Device should be as easy to use as a DMM.
 | Specification | Value | Notes |
 |----------|-------------|------|
 | Power | DC Input < 10W, power switch, indicator | Battery optional |
-| SD Card | TBD GB, Micro | size for FW upgrades and ROM file storage |
+| SD Card | TBD GB, Micro | size for FW upgrades, custom routines, and ROM file storage |
 | Keypad | Numbers 0x0-0xF, _enter_ key, 4+ Function | mechanical preferred |
 | Probe | Standard bayonet coax | oscilloscope compatible |
 | CPU Connection | Depends on TBD Pod architecture | 6-40 connections |
@@ -128,6 +128,11 @@ Processor support handled in Pod and new processor support _could_ be as simple 
 - Run Mode
     - resets and starts free-running emulation
     - unit behaves as if it is target processor
+- Custom Routines
+    - loaded via SD card
+    - coding language TBD
+    - Board-specific tests or pre-test configuation
+    - User-define test groupings or automations
 
 # TODO
 1. Decide on emulation options
