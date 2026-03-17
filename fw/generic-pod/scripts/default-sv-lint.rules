@@ -1,0 +1,273 @@
+Rule Configuration
+
+Use --rules_config (Path to lint rules configuration file. Disables
+      --rule_config_search if set.); default: "";
+Additionally, the --rules_config flag can be used to read configuration stored in a file. The syntax is the same as above, except the rules can be also separated with the newline character.
+
+The --rules flag allows to enable/disable rules as well as pass configuration to rules that accept them. It accepts a comma-separated list rule names. If prefixed with a - (minus), the rule is disabled. No prefix or a ‘+’ (plus) prefix enables the rule. An optional configuration can be passed after an = assignment. Each name/value is
+
+So rule configurations with parameters looks like this
+
+  --rules=[+-]rule-name="<param>:<paramvalue>;<param2>:<value>",[+-]next-rule...
+The following example enables the enum-name-style rule, enables and configures the line-length rule (80 characters length) and disables the no-tabs rule.
+
+verible-verilog-lint --rules=enum-name-style,+line-length=length:80,-no-tabs ...
+Some lint rules have multiple parameters, these are separated with semicolon. Since common shells treat semicolon as special character, you have to put the parameters in quotes.
+
+verible-verilog-lint --rules="undersized-binary-literal=hex:true;lint_zero:true" ...
+Additionally, the --rules_config flag can be used to read configuration stored in a file. The syntax is the same as above, except the rules can be also separated with the newline character.
+
+Regular Expressions
+Some lint rules allow users to use a regular expression to configure the rule. Verible utilises the RE2 regular expression library and full syntax documentation can be found at https://github.com/google/re2/wiki/syntax.
+
+verible-verilog-lint --rules="enum-name-style=style_regex:[a-z_0-9]+(_t|_e)" ...
+For naming style rules, the regex can be kept simple and not have to worry about the beginning starting with a digit as this is already taken care of by the lexer/parser. Below are some common naming style regex patterns that can be used.
+
+Naming Style	Regex Expression
+lower_snake_case	[a-z_0-9]+
+UPPER_SNAKE_CASE	[A-Z_0-9]+
+Title_Snake_Case	[A-Z]+[a-z0-9]*(_[A-Z0-9]+[a-z0-9]*)*
+Sentence_snake_case	([A-Z0-9]+[a-z0-9]*_?)([a-z0-9]*_*)*
+camelCase	([a-z0-9]+[A-Z0-9]*)+
+PascalCase	([A-Z0-9]+[a-z0-9]*)+
+
+
+
+always-comb                        Checks that there are no occurrences of `always @*`. Use `always_comb` instead.
+                                   Enabled by default: true
+
+always-comb-blocking               Checks that there are no occurrences of non-blocking assignment in combinational logic.
+                                   Enabled by default: true
+
+always-ff-non-blocking             Checks that blocking assignments are, at most, targeting locals in sequential logic.
+                                   Parameters:
+                                       * `catch_modifying_assignments` Default: `false` 
+                                       * `waive_for_locals` Default: `false` 
+                                   Enabled by default: true
+
+banned-declared-name-patterns      Checks for banned declared name against set of unwanted patterns.
+                                   Enabled by default: false
+
+case-missing-default               Checks that a default case-item is always defined unless the case statement has the `unique` qualifier.
+                                   Enabled by default: true
+
+constraint-name-style              Check that constraint names follow the required name style specified by a regular expression.
+                                   Parameter:
+                                       * `pattern` Default: `([a-z0-9]+_)+c` 
+                                   Enabled by default: true
+
+create-object-name-match           Checks that the 'name' argument of `type_id::create()` matches the name of the variable to which it is assigned.
+                                   Enabled by default: true
+
+dff-name-style                     Checks that D Flip-Flops use appropiate naming conventions in both input and output ports. The left hand side (output) and right hand side (input) are checked against a set of valid suffixes. Additionally, register names might end in a number to denote the pipeline stage index (var_q/var_q1, var_q2, ...). Pipelined signals must get their value from the previous stage: var_q3 <= var_q2. Exceptions to this rule can be configured using a regular expression or waiving whole `if` blocks
+                                   Parameters:
+                                       * `input` Default: `next,n,d` Comma separated list of allowed suffixes for the input port. Suffixes should not include the preceding "_". Empty field means no checks for the input port
+                                       * `output` Default: `reg,r,ff,q` Comma separated list of allowed suffixes for the output port. Should not include the preceding "_". Empty field means no checks for the output port
+                                       * `waive_ifs_with_conditions` Default: `!rst_ni,flush_i,!rst_ni || flush_i,flush_i || !rst_ni` Comma separated list of conditions that will disable the rule inside the `if`s they are evaluated in
+                                       * `waive_lhs_regex` Default: `(?i)mem.*` Nonblocking assigments whose lhs match the regex will not be evaluated
+                                   Enabled by default: false
+
+disable-statement                  Checks that there are no occurrences of `disable some_label` if label is referring to a fork or other none sequential block label. Use `disable fork` instead.
+                                   Enabled by default: false
+
+endif-comment                      Checks that a Verilog `` `endif`` directive is followed by a comment that matches the name of the opening `` `ifdef`` or `` `ifndef``.
+                                   Enabled by default: false
+
+enum-name-style                    Checks that enum type names follow a naming convention defined by a RE2 regular expression. The default regex pattern expects "lower_snake_case" with either a "_t" or "_e" suffix. Refer to https://github.com/chipsalliance/verible/tree/master/verilog/tools/lint#readme for more detail on verible regex patterns.
+                                   Parameter:
+                                       * `style_regex` Default: `[a-z_0-9]+(_t|_e)` A regex used to check enum type name style.
+                                   Enabled by default: true
+
+explicit-begin                     Checks that a Verilog ``begin`` directive follows all if, else, always, always_comb, always_latch, always_ff, for, forever, foreach, while and initial statements.
+                                   Parameters:
+                                       * `if_enable` Default: `true` All if statements require an explicit begin-end block
+                                       * `else_enable` Default: `true` All else statements require an explicit begin-end block
+                                       * `always_enable` Default: `true` All always statements require an explicit begin-end block
+                                       * `always_comb_enable` Default: `true` All always_comb statements require an explicit begin-end block
+                                       * `always_latch_enable` Default: `true` All always_latch statements require an explicit begin-end block
+                                       * `always_ff_enable` Default: `true` All always_ff statements require an explicit begin-end block
+                                       * `for_enable` Default: `true` All for statements require an explicit begin-end block
+                                       * `forever_enable` Default: `true` All forever statements require an explicit begin-end block
+                                       * `foreach_enable` Default: `true` All foreach statements require an explicit begin-end block
+                                       * `while_enable` Default: `true` All while statements require an explicit begin-end block
+                                       * `initial_enable` Default: `true` All initial statements require an explicit begin-end block
+                                   Enabled by default: false
+
+explicit-function-lifetime         Checks that every function declared outside of a class is declared with an explicit lifetime (static or automatic).
+                                   Enabled by default: true
+
+explicit-function-task-parameter-typeChecks that every function and task parameter is declared with an explicit storage type.
+                                   Enabled by default: true
+
+explicit-parameter-storage-type    Checks that every `parameter` and `localparam` is declared with an explicit storage type.
+                                   Parameter:
+                                       * `exempt_type` Default: `` Set to `string` to exempt string types
+                                   Enabled by default: true
+
+explicit-task-lifetime             Checks that every task declared outside of a class is declared with an explicit lifetime (static or automatic).
+                                   Enabled by default: true
+
+forbid-consecutive-null-statements Checks that there are no occurrences of consecutive null statements like `;;`
+                                   Enabled by default: true
+
+forbid-defparam                    Do not use defparam.
+                                   Enabled by default: true
+
+forbid-line-continuations          Checks that there are no occurrences of `\` when breaking the string literal line. Use concatenation operator with braces instead.
+                                   Enabled by default: true
+
+forbid-negative-array-dim          Check for negative constant literals inside array dimensions.
+                                   Enabled by default: false
+
+forbidden-macro                    Checks that no forbidden macro calls are used.
+                                   Enabled by default: true
+
+generate-label                     Checks that every generate block statement is labeled.
+                                   Enabled by default: true
+
+generate-label-prefix              Checks that every generate block label starts with g_ or gen_.
+                                   Enabled by default: true
+
+instance-shadowing                 Warns if there are multiple declarations in the same scope that shadow each other with the same name.
+                                   Enabled by default: false
+
+interface-name-style               Checks that 'interface' names follow a naming convention defined by a RE2 regular expression. The default regex pattern expects "lower_snake_case" with a "_if" or "_e" suffix. Refer to https://github.com/chipsalliance/verible/tree/master/verilog/tools/lint#readme for more detail on regex patterns.
+                                   Parameter:
+                                       * `style_regex` Default: `[a-z_0-9]+(_if)` A regex used to check interface name style.
+                                   Enabled by default: true
+
+invalid-system-task-function       Checks that no forbidden system tasks or functions are used. These consist of the following functions: `$psprintf`, `$random`, and `$dist_*`. As well as non-LRM function `$srandom`.
+                                   Enabled by default: true
+
+legacy-generate-region             Checks that there are no generate regions.
+                                   Enabled by default: false
+
+legacy-genvar-declaration          Checks that there are no separate `genvar` declarations.
+                                   Enabled by default: false
+
+line-length                        Checks that all lines do not exceed the maximum allowed length. 
+                                   Parameter:
+                                       * `length` Default: `100` Desired line length
+                                   Enabled by default: true
+
+macro-name-style                   Checks that macro names conform to a naming convention defined by a RE2 regular expression. The default regex pattern expects "UPPER_SNAKE_CASE". Exceptions are made for UVM like macros, where macros named 'uvm_*' and 'UVM_*' follow "lower_snake_case" and "UPPER_SNAKE_CASE" naming conventions respectively. Refer to https://github.com/chipsalliance/verible/tree/master/verilog/tools/lint#readme for more detail on verible regex patterns.
+                                   Parameter:
+                                       * `style_regex` Default: `[A-Z_0-9]+` A regex used to check macro names style.
+                                   Enabled by default: true
+
+macro-string-concatenation         Concatenation will not be evaluated here. Use `"...`" instead.
+                                   Enabled by default: false
+
+mismatched-labels                  Check for matching begin/end labels.
+                                   Enabled by default: false
+
+module-begin-block                 Checks that there are no begin-end blocks declared at the module level.
+                                   Enabled by default: true
+
+module-filename                    If a module is declared, checks that at least one module matches the first dot-delimited component of the file name. Depending on configuration, it is also allowed to replace underscore with dashes in filenames.
+                                   Parameter:
+                                       * `allow-dash-for-underscore` Default: `false` Allow dashes in the filename where there are dashes in the module name
+                                   Enabled by default: true
+
+module-parameter                   Checks that module instantiations with more than one parameter are passed in as named parameters, rather than positional parameters.
+                                   Enabled by default: true
+
+module-port                        Checks that module instantiations with more than one port are passed in as named ports, rather than positional ports.
+                                   Enabled by default: true
+
+no-tabs                            Checks that no tabs are used. Spaces should be used instead of tabs. 
+                                   Enabled by default: true
+
+no-trailing-spaces                 Checks that there are no trailing spaces on any lines.
+                                   Enabled by default: true
+
+numeric-format-string-style        Checks that string literals with numeric format specifiers have proper prefixes for hex and bin values and no prefixes for decimal values.
+                                   Enabled by default: false
+
+one-module-per-file                Checks that at most one module is declared per file.
+                                   Enabled by default: false
+
+package-filename                   Checks that the package name matches the filename. Depending on configuration, it is also allowed to replace underscore with dashes in filenames.
+                                   Parameter:
+                                       * `allow-dash-for-underscore` Default: `false` Allow dashes in the filename corresponding to the underscores in the package
+                                   Enabled by default: true
+
+packed-dimensions-range-ordering   Checks that packed dimension ranges are declare in little-endian (decreasing) order, e.g. `[N-1:0]`.
+                                   Enabled by default: true
+
+parameter-name-style               Checks that parameter and localparm names conform to a naming convention based on a choice of 'CamelCase', 'ALL_CAPS' and a user defined regex ORed together. Empty configurtaion: no style enforcement. Refer to https://github.com/chipsalliance/verible/tree/master/verilog/tools/lint#readme for more detail on verible regex patterns.
+                                   Parameters:
+                                       * `localparam_style` Default: `CamelCase` Style of localparam names
+                                       * `parameter_style` Default: `CamelCase|ALL_CAPS` Style of parameter names.
+                                       * `localparam_style_regex` Default: `` A regex used to check localparam name style.
+                                       * `parameter_style_regex` Default: `` A regex used to check parameter name style.
+                                   Enabled by default: true
+
+parameter-type-name-style          Checks that parameter type names follow the lower_snake_case naming convention and end with _t.
+                                   Enabled by default: false
+
+plusarg-assignment                 Checks that plusargs are always assigned a value, by ensuring that plusargs are never accessed using the `$test$plusargs` system task.
+                                   Enabled by default: true
+
+port-name-suffix                   Check that port names end with _i for inputs, _o for outputs and _io for inouts. Alternatively, for active-low signals use _n[io], for differential pairs use _n[io] and _p[io].
+                                   Enabled by default: false
+
+positive-meaning-parameter-name    Checks that no parameter name starts with 'disable', using positive naming (starting with 'enable') is recommended.
+                                   Enabled by default: true
+
+posix-eof                          Checks that the file ends with a newline.
+                                   Enabled by default: true
+
+proper-parameter-declaration       Checks that every `parameter` declaration is inside a formal parameter list of modules/classes and every `localparam` declaration is inside a module, class or package.
+                                   Parameters:
+                                       * `package_allow_parameter` Default: `false` Allow parameters in packages (treated as a synonym for localparam).
+                                       * `package_allow_localparam` Default: `true` Allow localparams in packages.
+                                   Enabled by default: false
+
+signal-name-style                  Checks that signal names conform to a naming convention defined by a RE2 regular expression. Signals are defined as "a net, variable, or port within a SystemVerilog design". The default regex pattern expects "lower_snake_case". Refer to https://github.com/chipsalliance/verible/tree/master/verilog/tools/lint#readme for more detail on verible regex patterns.
+                                   Parameter:
+                                       * `style_regex` Default: `[a-z_0-9]+` A regex used to check signal names style.
+                                   Enabled by default: false
+
+struct-union-name-style            Checks that `struct` and `union` names use lower_snake_case naming convention and end with '_t'.
+                                   Parameter:
+                                       * `exceptions` Default: `` Comma separated list of allowed upper-case elements, such as unit-names
+                                   Enabled by default: true
+
+suggest-parentheses                Recommend extra parentheses around subexpressions where it helps readability.
+                                   Enabled by default: true
+
+suspicious-semicolon               Checks that there are no suspicious semicolons that might affect code behaviour but escape quick visual inspection
+                                   Enabled by default: false
+
+truncated-numeric-literal          Checks that numeric literals are not longer than their stated bit-width to avoid undesired accidental truncation.
+                                   Enabled by default: true
+
+typedef-enums                      Checks that a Verilog `enum` declaration is named using `typedef`.
+                                   Enabled by default: true
+
+typedef-structs-unions             Checks that a Verilog `struct` or `union` declaration is named using `typedef`.
+                                   Parameter:
+                                       * `allow_anonymous_nested` Default: `false` Allow nested structs/unions to be anonymous.
+                                   Enabled by default: true
+
+undersized-binary-literal          Checks that the digits of binary literals for the configured bases match their declared width, i.e. has enough padding prefix zeros.
+                                   Parameters:
+                                       * `bin` Default: `true` Checking binary 'b literals.
+                                       * `oct` Default: `false` Checking octal 'o literals.
+                                       * `hex` Default: `false` Checking hexadecimal 'h literals.
+                                       * `lint_zero` Default: `false` Also generate a lint warning for value zero such as `32'h0`; autofix suggestions would be to zero-expand or untype `'0`.
+                                       * `autofix` Default: `true` Provide autofix suggestions, e.g. 32'hAB provides suggested fix 32'h000000AB.
+                                   Enabled by default: true
+
+unpacked-dimensions-range-ordering Checks that unpacked dimension ranges are declared in big-endian order `[0:N-1]`, and when an unpacked dimension range is zero-based `[0:N-1]`, the size is declared as `[N]` instead.
+                                   Enabled by default: true
+
+uvm-macro-semicolon                Checks that no `uvm_* macro calls end with ';'.
+                                   Enabled by default: false
+
+v2001-generate-begin               Checks that there are no generate-begin blocks inside a generate region.
+                                   Enabled by default: true
+
+void-cast                          Checks that void casts do not contain certain function/method calls. 
+                                   Enabled by default: true

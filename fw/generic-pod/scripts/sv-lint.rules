@@ -1,0 +1,9 @@
++always-comb
++always-comb-blocking
+explicit-begin=if_enable:true;else_enable:true;always_enable:true;always_comb_enable:true;always_latch_enable:true;always_ff_enable:true;for_enable:true;forever_enable:true;foreach_enable:true;while_enable:true;initial_enable:true;
++line-length=length:100
++no-tabs
++no-trailing-spaces
+signal-name-style=style_regex:[a-z_0-9]+
++suggest-parentheses
++suspicious-semicolon
