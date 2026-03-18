@@ -53,7 +53,8 @@ function(create_module_targets)
 
     list(APPEND MODULE_LINT_OPTIONS ${GLOBAL_LINT_OPTIONS})
     list(APPEND MODULE_SVLINT_OPTIONS ${GLOBAL_SVLINT_OPTIONS})
-    list(APPEND MODULE_SIM_OPTIONS ${GLOBAL_SIM_OPTIONS} --Mdir ${SIM_ARTIFACTS_DIR})
+    set(SIM_EXE_NAME V${fMODULE_NAME}-sim)
+    list(APPEND MODULE_SIM_OPTIONS ${GLOBAL_SIM_OPTIONS} -o ${SIM_EXE_NAME} --Mdir ${SIM_ARTIFACTS_DIR})
     list(APPEND MODULE_AUTO_SIM_OPTIONS ${GLOBAL_SIM_OPTIONS} -c -do)
 
     # Add a custom target for SV linting the library's sources
@@ -88,7 +89,7 @@ function(create_module_targets)
         add_custom_target(
             sim-${fMODULE_NAME}
             COMMAND ${VERILOG_SIMULATOR} ${fSOURCES} ${fMODULE_SIM_TESTBENCH} ${MODULE_SIM_OPTIONS}
-            COMMAND ${SIM_ARTIFACTS_PATH}/V${fMODULE_NAME}
+            COMMAND ${SIM_ARTIFACTS_PATH}/${SIM_EXE_NAME}
             COMMENT "Running all simulation testcases for ${fMODULE_NAME}"
         )
 

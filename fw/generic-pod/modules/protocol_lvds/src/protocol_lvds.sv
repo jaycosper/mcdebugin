@@ -9,31 +9,21 @@ import system_registers_pkg::*;
 module protocol_lvds #(
     parameter int CLK_FREQ_MHZ = 100
 ) (
-    input  wire                         clk,          // 100 MHz
-    input  wire                         rst_n,
+    input  logic    clk,          // 100 MHz
+    input  logic    rst_n,
 
     // LVDS pins
-    output wire                         lvds_clk_p,
-    output wire                         lvds_clk_n,
-    output wire                         lvds_tx_p,
-    output wire                         lvds_tx_n,
-    input  wire                         lvds_rx_p,
-    input  wire                         lvds_rx_n,
+    input  logic    lvds_clk_p,
+    input  logic    lvds_clk_n,
+    output logic    lvds_tx_p,
+    output logic    lvds_tx_n,
+    input  logic    lvds_rx_p,
+    input  logic    lvds_rx_n,
 
     // All system registers (agnostic to emulation target)
-    input  system_registers_pkg::general_registers_t  registers_in
+    input  general_registers_t  registers_in,
+    output general_registers_t  registers_out
 );
-
-    // ------------------------------------------------------------------
-    // Forwarded clock (100 MHz differential)
-    // ------------------------------------------------------------------
-    logic clk_out;
-    always_ff @(posedge clk or negedge rst_n)
-        if (!rst_n) clk_out <= 1'b0;
-        else        clk_out <= ~clk_out;
-
-    assign lvds_clk_p =  clk_out;
-    assign lvds_clk_n = ~clk_out;
 
     // ------------------------------------------------------------------
     // RX FSM + packet parser
@@ -192,7 +182,7 @@ module protocol_lvds #(
     end
 
     // ------------------------------------------------------------------
-    // TX – response generation (STATUS only for now)
+    // TX – response generation
     // ------------------------------------------------------------------
     localparam int STATUS_PAYLOAD_BYTES = $bits(system_status_t) / 8;  // 8
 

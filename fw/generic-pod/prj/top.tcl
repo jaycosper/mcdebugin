@@ -113,7 +113,6 @@ if {$make_assignments} {
         }
     }
     close $fp
-    #set_global_assignment -name SYSTEMVERILOG_FILE  ../src/top.sv
     #set_global_assignment -name QIP_FILE            <module-name>.qip
     # QIP is just a list of set_global_assignment commands that are added to the project before synthesis.
     # This is useful for IP cores that have a lot of files and assignments, or modular code.
@@ -132,6 +131,21 @@ if {$make_assignments} {
     set_location_assignment PIN_135 -to o_leds[3]
     set_location_assignment PIN_140 -to o_leds[4]
     set_location_assignment PIN_141 -to o_leds[5]
+    # LVDS forwarded clock + data (example locations – check your board schematic!)
+    set_location_assignment PIN_XX -to lvds_clk_p
+    set_location_assignment PIN_YY -to lvds_clk_n
+    set_instance_assignment -name IO_STANDARD "LVDS" -to lvds_clk_p
+    set_instance_assignment -name IO_STANDARD "LVDS" -to lvds_clk_n
+
+    set_location_assignment PIN_CC -to lvds_rx_p
+    set_location_assignment PIN_DD -to lvds_rx_n
+    set_instance_assignment -name IO_STANDARD "LVDS" -to lvds_rx_p
+    set_instance_assignment -name IO_STANDARD "LVDS" -to lvds_rx_n
+
+    set_location_assignment PIN_AA -to lvds_tx_p
+    set_location_assignment PIN_BB -to lvds_tx_n
+    set_instance_assignment -name IO_STANDARD "LVDS" -to lvds_tx_p
+    set_instance_assignment -name IO_STANDARD "LVDS" -to lvds_tx_n
 
     # Commit assignments
     export_assignments

@@ -16,6 +16,17 @@ module tb;
     // Generic registers input
     system_registers_pkg::general_registers_t regs_in = '0;
 
+    // ------------------------------------------------------------------
+    // Forwarded clock (100 MHz differential)
+    // ------------------------------------------------------------------
+    logic clk_out;
+    always_ff @(posedge clk or negedge rst_n)
+        if (!rst_n) clk_out <= 1'b0;
+        else        clk_out <= ~clk_out;
+
+    assign lvds_clk_p =  clk_out;
+    assign lvds_clk_n = ~clk_out;
+
     // DUT instantiation
     protocol_lvds #(
         .CLK_FREQ_MHZ(100)
