@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<simPackage>
+ <file
+   path="softlvds_rx_sim/altera_soft_lvds/altera_soft_lvds_rx_uPBgpK4M.v"
+   type="VERILOG"
+   library="softlvds_rx" />
+ <file path="softlvds_rx_sim/softlvds_rx.v" type="VERILOG" />
+ <topLevel name="softlvds_rx" />
+ <deviceFamily name="max10" />
+</simPackage>

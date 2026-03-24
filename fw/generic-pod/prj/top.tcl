@@ -16,7 +16,8 @@ proc get_opt {optname default} {
 
 # Then use it:
 set proj_name [get_opt "--project" "dut"]
-set file_list [get_opt "--files" "a.f"]
+set src_file_list [get_opt "--src_files" "src.f"]
+set ip_file_list [get_opt "--ip_files" "ip.f"]
 
 set need_to_close_project 0
 set make_assignments 1
@@ -104,16 +105,42 @@ if {$make_assignments} {
     # Source Files
     # TODO: find a way to define files in a different file that can be shared between this file and linter
     # Add RTL files from filelist.f
-    set fp [open $file_list r]
-    while {[gets $fp line] >= 0} {
-        if {[string match "*.v" $line]} {
-            set_global_assignment -name VERILOG_FILE $line
-        } else {
-            set_global_assignment -name SYSTEMVERILOG_FILE $line
+    if { [file exists $src_file_list] } {
+        set fp [open $src_file_list r]
+        while {[gets $fp line] >= 0} {
+            if {[string match "*.v" $line]} {
+                set_global_assignment -name VERILOG_FILE $line
+            } elseif {[string match "*.sv" $line]} {
+                set_global_assignment -name SYSTEMVERILOG_FILE $line
+            } elseif {[string match "*.qip" $line]} {
+                set_global_assignment -name QIP_FILE $line
+            } else {
+                puts "Source file $line not supported!"
+                #exit 1
+            }
         }
+        close $fp
+    } else {
+        puts "Source file list $src_file_list not found!"
+        #exit 1
     }
-    close $fp
-    #set_global_assignment -name QIP_FILE            <module-name>.qip
+
+    if { [file exists $ip_file_list] } {
+        set fp [open $ip_file_list r]
+        while {[gets $fp line] >= 0} {
+            if {[string match "*.qip" $line]} {
+                set_global_assignment -name QIP_FILE $line
+            } else {
+                puts "IP file $line not supported!"
+                #exit 1
+            }
+        }
+        close $fp
+    } else {
+        puts "IP file list $ip_file_list not found!"
+        #exit 1
+    }
+
     # QIP is just a list of set_global_assignment commands that are added to the project before synthesis.
     # This is useful for IP cores that have a lot of files and assignments, or modular code.
     # mymodule.qip:
@@ -131,21 +158,22 @@ if {$make_assignments} {
     set_location_assignment PIN_135 -to o_leds[3]
     set_location_assignment PIN_140 -to o_leds[4]
     set_location_assignment PIN_141 -to o_leds[5]
+
+    set_location_assignment PIN_120 -to i_switch[1]
+    set_location_assignment PIN_124 -to i_switch[2]
+    set_location_assignment PIN_127 -to i_switch[3]
+    set_location_assignment PIN_130 -to i_switch[4]
+    set_location_assignment PIN_131 -to i_switch[5]
+
     # LVDS forwarded clock + data (example locations – check your board schematic!)
-    set_location_assignment PIN_XX -to lvds_clk_p
-    set_location_assignment PIN_YY -to lvds_clk_n
-    set_instance_assignment -name IO_STANDARD "LVDS" -to lvds_clk_p
-    set_instance_assignment -name IO_STANDARD "LVDS" -to lvds_clk_n
+    set_location_assignment PIN_56 -to o_lvds_clk
+    set_instance_assignment -name IO_STANDARD "LVDS" -to o_lvds_clk
 
-    set_location_assignment PIN_CC -to lvds_rx_p
-    set_location_assignment PIN_DD -to lvds_rx_n
-    set_instance_assignment -name IO_STANDARD "LVDS" -to lvds_rx_p
-    set_instance_assignment -name IO_STANDARD "LVDS" -to lvds_rx_n
+    set_location_assignment PIN_58 -to i_lvds_rx
+    set_instance_assignment -name IO_STANDARD "LVDS" -to i_lvds_rx
 
-    set_location_assignment PIN_AA -to lvds_tx_p
-    set_location_assignment PIN_BB -to lvds_tx_n
-    set_instance_assignment -name IO_STANDARD "LVDS" -to lvds_tx_p
-    set_instance_assignment -name IO_STANDARD "LVDS" -to lvds_tx_n
+    set_location_assignment PIN_60 -to o_lvds_tx
+    set_instance_assignment -name IO_STANDARD "LVDS" -to o_lvds_tx
 
     # Commit assignments
     export_assignments

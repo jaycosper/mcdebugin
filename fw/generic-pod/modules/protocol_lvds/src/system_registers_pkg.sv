@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-package system_registers_pkg;
+package system_regs_pkg;
 
   typedef struct packed {
     logic [31:0] status;     // General 32-bit status
@@ -11,7 +11,7 @@ package system_registers_pkg;
   typedef struct packed {
     system_status_t status;   // current status block
     // Add more groups later: emulation, debug, pins, etc.
-  } general_registers_t;
+  } general_regs_t;
 
   localparam int MAX_PAYLOAD_BYTES = 64;
   localparam int CRC_POLY = 32'h04C11DB7;   // Ethernet CRC-32

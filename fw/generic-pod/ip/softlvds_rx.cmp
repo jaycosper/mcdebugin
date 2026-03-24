@@ -1,0 +1,8 @@
+	component softlvds_rx is
+		port (
+			rx_inclock : in  std_logic                    := 'X';             -- rx_inclock
+			rx_in      : in  std_logic_vector(0 downto 0) := (others => 'X'); -- rx_in
+			rx_out     : out std_logic_vector(9 downto 0)                     -- rx_out
+		);
+	end component softlvds_rx;
+

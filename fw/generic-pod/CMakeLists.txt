@@ -12,6 +12,7 @@ project(top LANGUAGES NONE)
 #   Project top
 set(PROJECT_TOP_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(MODULES_DIR ${PROJECT_TOP_DIR}/modules)
+set(IP_DIR ${PROJECT_TOP_DIR}/ip)
 set(PROJECT_DIR ${PROJECT_TOP_DIR}/prj)
 set(SCRIPTS_DIR ${PROJECT_TOP_DIR}/scripts)
 
@@ -33,6 +34,7 @@ add_custom_target(clean-sim)
 # Initialize the global MODULES list
 set(GLOBAL_MODULES "" CACHE INTERNAL "global project list of modules")
 set(GLOBAL_SOURCES "" CACHE INTERNAL "global project list of sources")
+set(GLOBAL_IP "" CACHE INTERNAL "global project list of vendor ip")
 
 # Point to your custom modules (in this case, FindQuartus.cmake)
 list(APPEND CMAKE_MODULE_PATH ${SCRIPTS_DIR})
@@ -50,10 +52,20 @@ foreach(MODULE ${GLOBAL_MODULES})
     add_dependencies(clean-sim clean-sim-${MODULE})
 endforeach()
 
+# Generate .f for source files
 foreach(SRC ${GLOBAL_SOURCES})
     message("Global Source file: ${SRC}")
 endforeach()
 list(SORT GLOBAL_SOURCES)
 string(REPLACE ";" "\n" file_content "${GLOBAL_SOURCES}")
-file(WRITE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}-generated.f" "${file_content}\n")
-message(STATUS "Generated file list: ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-generated.f")
+file(WRITE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}-src-generated.f" "${file_content}\n")
+message(STATUS "Generated file list: ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-src-generated.f")
+
+# Generate .f for IP files
+foreach(SRC ${GLOBAL_IP})
+    message("Global IP file: ${SRC}")
+endforeach()
+list(SORT GLOBAL_IP)
+string(REPLACE ";" "\n" file_content "${GLOBAL_IP}")
+file(WRITE "${CMAKE_BINARY_DIR}/${PROJECT_NAME}-ip-generated.f" "${file_content}\n")
+message(STATUS "Generated file list: ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-ip-generated.f")

@@ -27,7 +27,8 @@ function(add_quartus_custom_flow)
         COMMAND ${QUARTUS_SH_EXECUTABLE}
                 -t ${ARG_TCL_SCRIPT}
                 --project ${PROJ}
-                --files ${BUILD_DIR}/${PROJ}-generated.f
+                --src_files ${BUILD_DIR}/${PROJ}-src-generated.f
+                --ip_files ${BUILD_DIR}/${PROJ}-ip-generated.f
                 # these are handled in TCL
                 # -family "${ARG_FAMILY}"
                 # -device "${ARG_DEVICE}"
@@ -48,6 +49,11 @@ function(add_quartus_custom_flow)
         WORKING_DIRECTORY ${BUILD_DIR}
         COMMENT "Quartus full compile → generating ${PROJ}.sof"
         VERBATIM
+    )
+
+    # Project only target: creates .qsf/.qpf but doesn't compile (fastest for iterative development)
+    add_custom_target(project_files ALL
+        DEPENDS ${BUILD_DIR}/${PROJ}.qsf ${BUILD_DIR}/${PROJ}.qpf
     )
 
     # Main target: depends on .sof (fast debug flow)
