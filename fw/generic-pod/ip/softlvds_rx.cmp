@@ -1,8 +1,10 @@
 	component softlvds_rx is
 		port (
-			rx_inclock : in  std_logic                    := 'X';             -- rx_inclock
-			rx_in      : in  std_logic_vector(0 downto 0) := (others => 'X'); -- rx_in
-			rx_out     : out std_logic_vector(9 downto 0)                     -- rx_out
+			rx_inclock    : in  std_logic                    := 'X';             -- rx_inclock
+			rx_in         : in  std_logic_vector(0 downto 0) := (others => 'X'); -- rx_in
+			rx_out        : out std_logic_vector(9 downto 0);                    -- rx_out
+			rx_data_reset : in  std_logic                    := 'X';             -- rx_data_reset
+			rx_data_align : in  std_logic                    := 'X'              -- rx_data_align
 		);
 	end component softlvds_rx;
 

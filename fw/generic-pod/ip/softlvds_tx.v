@@ -6,20 +6,22 @@
 
 `timescale 1 ps / 1 ps
 module softlvds_tx (
-		input  wire       tx_inclock,   //   tx_inclock.tx_inclock
-		input  wire       tx_syncclock, // tx_syncclock.tx_syncclock
-		input  wire [9:0] tx_in,        //        tx_in.tx_in
-		output wire [0:0] tx_out        //       tx_out.tx_out
+		input  wire       tx_inclock,    //    tx_inclock.tx_inclock
+		input  wire       tx_syncclock,  //  tx_syncclock.tx_syncclock
+		input  wire       tx_data_reset, // tx_data_reset.tx_data_reset
+		input  wire [9:0] tx_in,         //         tx_in.tx_in
+		output wire [0:0] tx_out         //        tx_out.tx_out
 	);
 
-	altera_soft_lvds_tx_uRBd16Og softlvds_tx_inst (
-		.tx_inclock   (tx_inclock),   //   tx_inclock.tx_inclock
-		.tx_syncclock (tx_syncclock), // tx_syncclock.tx_syncclock
-		.tx_in        (tx_in),        //        tx_in.tx_in
-		.tx_out       (tx_out),       //       tx_out.tx_out
-		.tx_outclock  (),             //  (terminated)
-		.tx_coreclock (),             //  (terminated)
-		.tx_locked    ()              //  (terminated)
+	altera_soft_lvds_tx_uS1HUqyJ softlvds_tx_inst (
+		.tx_inclock    (tx_inclock),    //    tx_inclock.tx_inclock
+		.tx_syncclock  (tx_syncclock),  //  tx_syncclock.tx_syncclock
+		.tx_data_reset (tx_data_reset), // tx_data_reset.tx_data_reset
+		.tx_in         (tx_in),         //         tx_in.tx_in
+		.tx_out        (tx_out),        //        tx_out.tx_out
+		.tx_outclock   (),              //   (terminated)
+		.tx_coreclock  (),              //   (terminated)
+		.tx_locked     ()               //   (terminated)
 	);
 
 endmodule
@@ -61,7 +63,7 @@ endmodule
 // Retrieval info: 	<generic name="ENABLE_RX_LOCKED_PORT_UI" value="false" />
 // Retrieval info: 	<generic name="ENABLE_TX_LOCKED_PORT_UI" value="false" />
 // Retrieval info: 	<generic name="ENABLE_PLL_ARESET_PORT_UI" value="true" />
-// Retrieval info: 	<generic name="ENABLE_PLL_TX_DATA_RESET_PORT_UI" value="false" />
+// Retrieval info: 	<generic name="ENABLE_PLL_TX_DATA_RESET_PORT_UI" value="true" />
 // Retrieval info: 	<generic name="ENABLE_PLL_RX_DATA_RESET_PORT_UI" value="false" />
 // Retrieval info: 	<generic name="COMMON_RX_TX_PLL_UI" value="true" />
 // Retrieval info: 	<generic name="PLL_SELF_RESET_ON_LOSS_LOCK_UI" value="false" />
@@ -118,4 +120,4 @@ endmodule
 // Retrieval info: 	<generic name="VOD_SETTING" value="0" />
 // Retrieval info: </instance>
 // IPFS_FILES : softlvds_tx.vo
-// RELATED_FILES: softlvds_tx.v, altera_soft_lvds_tx_uRBd16Og.v
+// RELATED_FILES: softlvds_tx.v, altera_soft_lvds_tx_uS1HUqyJ.v

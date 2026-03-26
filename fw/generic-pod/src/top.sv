@@ -14,13 +14,12 @@ module top (
 );
 
     logic sys_clk, sys_rst_n;
-    logic lvds_clk_fast, lvds_clk_slow;
+    logic lvds_clk_slow;
     main_pll u_clk (
         .areset(!i_resetn),
         .inclk0(i_clk),
         .c0(sys_clk),
-        .c1(lvds_clk_fast),
-        .c2(lvds_clk_slow),
+        .c1(lvds_clk_slow),
         .locked(sys_rst_n)
     );
 
@@ -46,6 +45,9 @@ module top (
         end
     endgenerate
 
+    logic rcvd_data_locked;
+    logic [9:0] rcvd_data;
+
     always_ff @(posedge sys_clk) begin
         if (sw_state[1]) begin
             // increment counter on each clock cycle
@@ -59,33 +61,33 @@ module top (
     // use upper bits of counter to drive LEDs, creating a slow counting effect
     assign o_leds = (sw_state[2]) ? counter[23:19] : rcvd_data[9:5]; // switch between counter and received data for LEDs
 
-    logic lvds_clk;
-    logic [9:0] gen_data, rcvd_data;
+    logic [9:0] gen_data;
 
-    always_ff @(posedge lvds_clk_fast) begin
+    always_ff @(posedge lvds_clk_slow) begin
         if (!sys_rst_n) begin
             gen_data <= 'h0; // Reset the data to be transmitted
         end else begin
-            if (sw_state[3]) begin
-                gen_data <= 10'h2A5;
+            if (sw_state[3] || !rcvd_data_locked) begin
+                gen_data <= 10'h0FA; // K28.5 = 0xBC; RD = -1 -> 0x0FA, RD = +1 -> 0x205
             end else begin
                 gen_data <= gen_data + 1'b1; // Increment the data to be transmitted
             end
         end
     end
 
-    assign o_lvds_clk = lvds_clk_fast;
-    softlvds_tx u_tx (
-        .tx_inclock(lvds_clk_fast),
-        .tx_syncclock(lvds_clk_slow),
-        .tx_in (gen_data),
-        .tx_out(o_lvds_tx)
-    );
+    lvds_rxtx u_lvd_rxtx (
+        .i_clk(sys_clk),
+        .i_rst_n(sys_rst_n),
+        .i_frame_clk(lvds_clk_slow),
 
-    softlvds_rx u_rx(
-        .rx_inclock(lvds_clk_fast),
-        .rx_in(i_lvds_rx),
-        .rx_out (rcvd_data)
+        .o_lvds_clk(o_lvds_clk),
+        .i_lvds_rx(i_lvds_rx),
+        .o_lvds_tx(o_lvds_tx),
+
+        // clocked in i_frame_clk domain
+        .o_data_locked(rcvd_data_locked),
+        .i_datain(gen_data),
+        .o_dataout(rcvd_data)
     );
 
 endmodule

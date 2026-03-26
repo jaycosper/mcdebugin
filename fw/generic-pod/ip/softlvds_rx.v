@@ -6,20 +6,23 @@
 
 `timescale 1 ps / 1 ps
 module softlvds_rx (
-		input  wire       rx_inclock, // rx_inclock.rx_inclock
-		input  wire [0:0] rx_in,      //      rx_in.rx_in
-		output wire [9:0] rx_out      //     rx_out.rx_out
+		input  wire       rx_inclock,    //    rx_inclock.rx_inclock
+		input  wire [0:0] rx_in,         //         rx_in.rx_in
+		output wire [9:0] rx_out,        //        rx_out.rx_out
+		input  wire       rx_data_reset, // rx_data_reset.rx_data_reset
+		input  wire       rx_data_align  // rx_data_align.rx_data_align
 	);
 
-	altera_soft_lvds_rx_uPBgpK4M softlvds_rx_inst (
-		.rx_inclock            (rx_inclock), // rx_inclock.rx_inclock
-		.rx_in                 (rx_in),      //      rx_in.rx_in
-		.rx_out                (rx_out),     //     rx_out.rx_out
-		.rx_locked             (),           // (terminated)
-		.rx_data_align         (1'b0),       // (terminated)
-		.rx_channel_data_align (1'b0),       // (terminated)
-		.rx_cda_reset          (1'b0),       // (terminated)
-		.rx_data_align_reset   (1'b0)        // (terminated)
+	altera_soft_lvds_rx_uP1RPNs2 softlvds_rx_inst (
+		.rx_inclock            (rx_inclock),    //    rx_inclock.rx_inclock
+		.rx_in                 (rx_in),         //         rx_in.rx_in
+		.rx_out                (rx_out),        //        rx_out.rx_out
+		.rx_data_reset         (rx_data_reset), // rx_data_reset.rx_data_reset
+		.rx_data_align         (rx_data_align), // rx_data_align.rx_data_align
+		.rx_locked             (),              //   (terminated)
+		.rx_channel_data_align (1'b0),          //   (terminated)
+		.rx_cda_reset          (1'b0),          //   (terminated)
+		.rx_data_align_reset   (1'b0)           //   (terminated)
 	);
 
 endmodule
@@ -62,15 +65,15 @@ endmodule
 // Retrieval info: 	<generic name="ENABLE_TX_LOCKED_PORT_UI" value="false" />
 // Retrieval info: 	<generic name="ENABLE_PLL_ARESET_PORT_UI" value="true" />
 // Retrieval info: 	<generic name="ENABLE_PLL_TX_DATA_RESET_PORT_UI" value="false" />
-// Retrieval info: 	<generic name="ENABLE_PLL_RX_DATA_RESET_PORT_UI" value="false" />
+// Retrieval info: 	<generic name="ENABLE_PLL_RX_DATA_RESET_PORT_UI" value="true" />
 // Retrieval info: 	<generic name="COMMON_RX_TX_PLL_UI" value="true" />
 // Retrieval info: 	<generic name="PLL_SELF_RESET_ON_LOSS_LOCK_UI" value="false" />
-// Retrieval info: 	<generic name="PORT_RX_DATA_ALIGN_UI" value="false" />
+// Retrieval info: 	<generic name="PORT_RX_DATA_ALIGN_UI" value="true" />
 // Retrieval info: 	<generic name="PORT_RX_CHANNEL_DATA_ALIGN_UI" value="false" />
 // Retrieval info: 	<generic name="USE_CDA_RESET_UI" value="true" />
 // Retrieval info: 	<generic name="PORT_RX_DATA_ALIGN_RESET_UI" value="false" />
 // Retrieval info: 	<generic name="REGISTERED_DATA_ALIGN_INPUT_UI" value="false" />
-// Retrieval info: 	<generic name="DATA_ALIGN_ROLLOVER" value="4" />
+// Retrieval info: 	<generic name="DATA_ALIGN_ROLLOVER" value="5" />
 // Retrieval info: 	<generic name="REGISTERED_OUTPUT_UI" value="true" />
 // Retrieval info: 	<generic name="ENABLE_TX_OUTCLOCK_PORT_UI" value="true" />
 // Retrieval info: 	<generic name="OUTCLOCK_DIVIDE_BY_UI" value="10" />
@@ -118,4 +121,4 @@ endmodule
 // Retrieval info: 	<generic name="VOD_SETTING" value="0" />
 // Retrieval info: </instance>
 // IPFS_FILES : softlvds_rx.vo
-// RELATED_FILES: softlvds_rx.v, altera_soft_lvds_rx_uPBgpK4M.v
+// RELATED_FILES: softlvds_rx.v, altera_soft_lvds_rx_uP1RPNs2.v

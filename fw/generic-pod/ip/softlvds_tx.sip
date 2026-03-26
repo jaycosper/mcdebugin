@@ -4,4 +4,4 @@ set_global_assignment -entity "softlvds_tx" -library "lib_softlvds_tx" -name IP_
 set_global_assignment -library "lib_softlvds_tx" -name SPD_FILE [file join $::quartus(sip_path) "softlvds_tx.spd"]
 
 set_global_assignment -library "lib_softlvds_tx" -name MISC_FILE [file join $::quartus(sip_path) "softlvds_tx_sim/softlvds_tx.v"]
-set_global_assignment -library "lib_softlvds_tx" -name MISC_FILE [file join $::quartus(sip_path) "softlvds_tx_sim/altera_soft_lvds/altera_soft_lvds_tx_uRBd16Og.v"]
+set_global_assignment -library "lib_softlvds_tx" -name MISC_FILE [file join $::quartus(sip_path) "softlvds_tx_sim/altera_soft_lvds/altera_soft_lvds_tx_uS1HUqyJ.v"]
