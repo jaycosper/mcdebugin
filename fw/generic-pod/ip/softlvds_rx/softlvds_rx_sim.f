@@ -1,0 +1,2 @@
+softlvds_rx_sim/softlvds_rx.v
+softlvds_rx_sim/altera_soft_lvds/altera_soft_lvds_rx_uP1RPNs2.v

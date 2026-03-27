@@ -1,0 +1,2 @@
+softlvds_tx_sim/softlvds_tx.v
+softlvds_tx_sim/altera_soft_lvds/altera_soft_lvds_tx_uS1HUqyJ.v
