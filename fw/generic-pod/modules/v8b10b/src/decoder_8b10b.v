@@ -40,11 +40,11 @@ wire [9:0]d;
 reg k, p;
 
 assign d = i_din;
-assign o_disp_err = (pe == '0) ? 1'b0 : 1'b1;
+assign o_disp_err = (pe == 'h0) ? 1'b0 : 1'b1;
 assign o_valid = valid;
 assign o_dout = do_q;
 assign o_kout = k;
-assign o_code_err = (e == '0) ? 1'b0 : 1'b1;
+assign o_code_err = (e == 'h0) ? 1'b0 : 1'b1;
 assign o_disp = p;
 
 always @(posedge i_clk) begin

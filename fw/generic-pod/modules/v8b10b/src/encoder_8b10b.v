@@ -55,7 +55,7 @@ always @(posedge i_clk) begin
         p_q <= 1'b0;
         ke_q <= 1'b0;
         do_q <= 10'b0;
-        valid <= '0;
+        valid <= 'h0;
     end else begin
         valid[0] <= i_en;
         valid[1] <= valid[0];

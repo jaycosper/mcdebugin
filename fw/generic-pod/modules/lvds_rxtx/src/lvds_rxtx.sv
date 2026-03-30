@@ -1,6 +1,10 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
+//`define TEST_MODE 1
+
+import lvds_rxtx_pkg::*;
+
 module lvds_rxtx (
     input   logic i_clk,
     input   logic i_rst_n,
@@ -11,14 +15,16 @@ module lvds_rxtx (
     output  logic o_lvds_tx,
 
     // clocked in i_frame_clk domain
-    output  logic o_data_locked,
-    input   logic [9:0] i_datain,
-    output  logic [9:0] o_dataout
+    output  logic       o_link_locked,
+    input   symbol_t    i_datain,
+    output  symbol_t    o_dataout
 );
+
+    symbol_t tx_data, rx_data;
+    logic [9:0] rcvd_data;
 
     logic locked;
     logic advance_align;
-    logic [9:0] rcvd_data;
 
     logic [3:0] align_cntr;
     logic reset_cntr;
@@ -29,24 +35,53 @@ module lvds_rxtx (
     // slow clock = data_rate / bits_per_symbol = 250Mbps / 10 = 25MHz
     assign o_lvds_clk = i_clk;
 
+    encoder_8b10b u_enc (
+        .i_clk      (i_frame_clk),
+        .i_rst      (!i_rst_n),
+        .i_en       (1'b1),
+        .i_din      (i_datain.data),
+        .i_kin      (i_datain.is_k),
+        .o_valid    (/*unused*/),
+        .o_dout     (tx_data.data),
+        .o_disp     (tx_data.disp),
+        .o_kin_err  (tx_data.enc_kin_err)
+    );
+
     softlvds_tx u_tx (
-        .tx_inclock(i_clk),
-        .tx_syncclock(i_frame_clk),
-        .tx_data_reset(!i_rst_n),
-        .tx_in (i_datain),
-        .tx_out(o_lvds_tx)
+        .tx_inclock     (i_clk),
+        .tx_syncclock   (i_frame_clk),
+        .tx_data_reset  (!i_rst_n),
+`ifdef TEST_MODE
+        .tx_in          ({2'b00, i_datain.data}),
+`else
+        .tx_in          (tx_data.data),
+`endif
+        .tx_out         (o_lvds_tx)
     );
 
     softlvds_rx u_rx(
-        .rx_inclock(i_clk),
-        .rx_in(i_lvds_rx),
-        .rx_out (rcvd_data),
-        .rx_data_reset(!i_rst_n),
-        .rx_data_align(advance_align)
+        .rx_inclock     (i_clk),
+        .rx_in          (i_lvds_rx),
+        .rx_out         (rcvd_data),
+        .rx_data_reset  (!i_rst_n),
+        .rx_data_align  (advance_align)
+    );
+
+    decoder_8b10b u_dec (
+        .i_clk      (i_frame_clk),
+        .i_rst      (!i_rst_n),
+        .i_en       (1'b1),
+        .i_din      (rcvd_data),
+        .o_valid    (/*unused*/),
+        .o_dout     (rx_data.data),
+        .o_kout     (rx_data.is_k),
+        .o_code_err (rx_data.dec_code_err),
+        .o_disp     (rx_data.disp),
+        .o_disp_err (rx_data.dec_disp_err)
     );
 
     always_ff @(posedge i_frame_clk) begin
-        o_dataout <= rcvd_data;
+        o_dataout <= rx_data;
     end
 
     // State machine for detecting LVDS data alignment and locking
@@ -96,7 +131,12 @@ module lvds_rxtx (
             stCHECK: begin
                 // check data alignment
                 nstate = stCHECK;
-                if (o_dataout == i_datain) begin
+`ifdef TEST_MODE
+                if (rcvd_data[7:0] == SYNC_STREAM.data) begin
+`else
+                if (rx_data.data == SYNC_STREAM.data && rx_data.is_k == SYNC_STREAM.is_k) begin
+                //if (o_dataout.data == SYNC_STREAM.data && o_dataout.is_k == SYNC_STREAM.is_k) begin
+`endif
                     // properly aligned -- expecting loopback of transmitted data
                     nstate = stLOCKED;
                 end else begin
@@ -114,7 +154,7 @@ module lvds_rxtx (
         endcase
     end
 
-    assign o_data_locked = locked;
+    assign o_link_locked = locked;
 
 endmodule
 

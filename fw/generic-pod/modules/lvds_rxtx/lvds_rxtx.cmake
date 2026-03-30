@@ -5,6 +5,7 @@
 set(MODULE_NAME lvds_rxtx)
 # # module source files
 set(SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/src/${MODULE_NAME}_pkg.sv
     ${CMAKE_CURRENT_LIST_DIR}/src/${MODULE_NAME}.sv
 )
 # # module-specific lint options

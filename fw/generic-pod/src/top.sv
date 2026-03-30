@@ -45,8 +45,9 @@ module top (
         end
     endgenerate
 
-    logic rcvd_data_locked;
-    logic [9:0] rcvd_data;
+    lvds_rxtx_pkg::symbol_t gen_data;
+    lvds_rxtx_pkg::symbol_t rcvd_data;
+    logic link_locked;
 
     always_ff @(posedge sys_clk) begin
         if (sw_state[1]) begin
@@ -59,18 +60,17 @@ module top (
     end
 
     // use upper bits of counter to drive LEDs, creating a slow counting effect
-    assign o_leds = (sw_state[2]) ? counter[23:19] : rcvd_data[9:5]; // switch between counter and received data for LEDs
-
-    logic [9:0] gen_data;
+    assign o_leds = (sw_state[2]) ? counter[23:19] : rcvd_data.data[7:3]; // switch between counter and received data for LEDs
 
     always_ff @(posedge lvds_clk_slow) begin
         if (!sys_rst_n) begin
-            gen_data <= 'h0; // Reset the data to be transmitted
+            gen_data <= '0; // Reset the data to be transmitted
         end else begin
-            if (sw_state[3] || !rcvd_data_locked) begin
-                gen_data <= 10'h0FA; // K28.5 = 0xBC; RD = -1 -> 0x0FA, RD = +1 -> 0x205
+            if (sw_state[3] || !link_locked) begin
+                gen_data <= SYNC_STREAM; // Transmit K28.5 until locked or if switch 3 is active
             end else begin
-                gen_data <= gen_data + 1'b1; // Increment the data to be transmitted
+                gen_data.is_k <= 1'b0;
+                gen_data.data <= gen_data.data + 1'b1; // Increment the data to be transmitted
             end
         end
     end
@@ -85,7 +85,7 @@ module top (
         .o_lvds_tx(o_lvds_tx),
 
         // clocked in i_frame_clk domain
-        .o_data_locked(rcvd_data_locked),
+        .o_link_locked(link_locked),
         .i_datain(gen_data),
         .o_dataout(rcvd_data)
     );
