@@ -45,8 +45,8 @@ module top (
         end
     endgenerate
 
-    lvds_rxtx_pkg::symbol_t gen_data;
-    lvds_rxtx_pkg::symbol_t rcvd_data;
+    lvds_rxtx_pkg::rxtx_data_t gen_data;
+    lvds_rxtx_pkg::rxtx_data_t rcvd_data;
     logic link_locked;
 
     always_ff @(posedge sys_clk) begin

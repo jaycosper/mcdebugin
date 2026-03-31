@@ -1,8 +1,6 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-//`define TEST_MODE 1
-
 import lvds_rxtx_pkg::*;
 
 module lvds_rxtx (
@@ -16,12 +14,13 @@ module lvds_rxtx (
 
     // clocked in i_frame_clk domain
     output  logic       o_link_locked,
-    input   symbol_t    i_datain,
-    output  symbol_t    o_dataout
+    input   rxtx_data_t i_datain,
+    output  rxtx_data_t o_dataout
 );
 
-    symbol_t tx_data, rx_data;
+    symbol_t tx_data;
     logic [9:0] rcvd_data;
+    rxtx_data_t rx_data;
 
     logic locked;
     logic advance_align;
@@ -41,21 +40,17 @@ module lvds_rxtx (
         .i_en       (1'b1),
         .i_din      (i_datain.data),
         .i_kin      (i_datain.is_k),
-        .o_valid    (/*unused*/),
+        .o_valid    (tx_data.valid),
         .o_dout     (tx_data.data),
         .o_disp     (tx_data.disp),
-        .o_kin_err  (tx_data.enc_kin_err)
+        .o_kin_err  (tx_data.kin_err)
     );
 
     softlvds_tx u_tx (
         .tx_inclock     (i_clk),
         .tx_syncclock   (i_frame_clk),
         .tx_data_reset  (!i_rst_n),
-`ifdef TEST_MODE
-        .tx_in          ({2'b00, i_datain.data}),
-`else
         .tx_in          (tx_data.data),
-`endif
         .tx_out         (o_lvds_tx)
     );
 
@@ -72,12 +67,12 @@ module lvds_rxtx (
         .i_rst      (!i_rst_n),
         .i_en       (1'b1),
         .i_din      (rcvd_data),
-        .o_valid    (/*unused*/),
+        .o_valid    (rx_data.valid),
         .o_dout     (rx_data.data),
         .o_kout     (rx_data.is_k),
-        .o_code_err (rx_data.dec_code_err),
+        .o_code_err (rx_data.code_err),
         .o_disp     (rx_data.disp),
-        .o_disp_err (rx_data.dec_disp_err)
+        .o_disp_err (rx_data.disp_err)
     );
 
     always_ff @(posedge i_frame_clk) begin
@@ -131,12 +126,7 @@ module lvds_rxtx (
             stCHECK: begin
                 // check data alignment
                 nstate = stCHECK;
-`ifdef TEST_MODE
-                if (rcvd_data[7:0] == SYNC_STREAM.data) begin
-`else
-                if (rx_data.data == SYNC_STREAM.data && rx_data.is_k == SYNC_STREAM.is_k) begin
-                //if (o_dataout.data == SYNC_STREAM.data && o_dataout.is_k == SYNC_STREAM.is_k) begin
-`endif
+                if (o_dataout.data == SYNC_STREAM.data && o_dataout.is_k == SYNC_STREAM.is_k) begin
                     // properly aligned -- expecting loopback of transmitted data
                     nstate = stLOCKED;
                 end else begin
