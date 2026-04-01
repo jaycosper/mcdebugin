@@ -11,8 +11,9 @@ project(top LANGUAGES NONE)
 # Path variables
 #   Project top
 set(PROJECT_TOP_DIR ${CMAKE_CURRENT_LIST_DIR})
-set(MODULES_DIR ${PROJECT_TOP_DIR}/modules)
+set(INCLUDE_DIR ${PROJECT_TOP_DIR}/inc)
 set(IP_DIR ${PROJECT_TOP_DIR}/ip)
+set(MODULES_DIR ${PROJECT_TOP_DIR}/modules)
 set(PROJECT_DIR ${PROJECT_TOP_DIR}/prj)
 set(SCRIPTS_DIR ${PROJECT_TOP_DIR}/scripts)
 

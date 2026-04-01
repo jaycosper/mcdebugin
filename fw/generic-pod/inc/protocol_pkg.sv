@@ -1,5 +1,6 @@
+`timescale 1ns / 1ps
 
-package lvds_rxtx_pkg;
+package protocol_pkg;
 
     typedef struct packed {
         logic       valid;
@@ -23,6 +24,6 @@ package lvds_rxtx_pkg;
     parameter rxtx_data_t K28_5 = '{default:0, data:8'hBC, is_k:1'b1};
 
     parameter rxtx_data_t SYNC_STREAM = K28_5;
-    parameter rxtx_data_t TRANSACTION_START = K28_1;
+    parameter rxtx_data_t MESSAGE_START = K28_1;
 
 endpackage

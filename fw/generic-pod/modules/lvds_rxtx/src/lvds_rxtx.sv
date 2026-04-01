@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-import lvds_rxtx_pkg::*;
+import protocol_pkg::*;
 
 module lvds_rxtx (
     input   logic i_clk,

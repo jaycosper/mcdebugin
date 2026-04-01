@@ -2,7 +2,7 @@
 # #### User Defined Section #####
 # ###############################
 # module name
-set(MODULE_NAME lvds_rxtx)
+set(MODULE_NAME stream_decoder)
 # # module source files
 set(SOURCES
     ${INCLUDE_DIR}/protocol_pkg.sv
