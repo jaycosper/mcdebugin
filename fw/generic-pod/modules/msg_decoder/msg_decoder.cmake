@@ -2,7 +2,7 @@
 # #### User Defined Section #####
 # ###############################
 # module name
-set(MODULE_NAME lvds_rxtx)
+set(MODULE_NAME msg_decoder)
 # # module source files
 set(SOURCES
     ${INCLUDE_DIR}/protocol_pkg.sv
@@ -20,7 +20,7 @@ set(MODULE_FORMAT_OPTIONS )
 set(MODULE_SIM_OPTIONS )
 # # module-specific testbench
 set(MODULE_SIM_TESTBENCH
-    #${CMAKE_CURRENT_LIST_DIR}/sim/tb_${MODULE_NAME}.sv # NOT CREATED
+    ${CMAKE_CURRENT_LIST_DIR}/sim/tb_${MODULE_NAME}.sv
 )
 # ###############################
 

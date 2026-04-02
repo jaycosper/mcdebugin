@@ -5,6 +5,7 @@
 set(MODULE_NAME top)
 # # module source files
 set(SOURCES
+    ${INCLUDE_DIR}/protocol_pkg.sv
     ${CMAKE_CURRENT_LIST_DIR}/${MODULE_NAME}.sv
 )
 # # module-specific lint options
@@ -15,6 +16,9 @@ set(MODULE_LINT_OPTIONS )
 set(MODULE_LINT_EXCEPTIONS )
 # # module-specific format options
 set(MODULE_FORMAT_OPTIONS )
+# # module-specific testbench
+set(MODULE_SIM_TESTBENCH
+)
 # ###############################
 
 create_module_targets(

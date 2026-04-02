@@ -98,9 +98,9 @@ module tb_v8b10b;
         enc_en = 1;
         repeat (5) @(negedge clk);
 
-        $display("========================================");
-        $display("   v8b10b Encoder/Decoder Full Testbench");
-        $display("========================================");
+        $display("┌──────────────────────────────────────────┐");
+        $display("│   Starting 8b10b Encoder/Decoder Tests   │");
+        $display("└──────────────────────────────────────────┘");
 
         // Happy path tests
         // simple test
@@ -124,12 +124,15 @@ module tb_v8b10b;
         #100;
 
         // Final report
-        $display("\n========================================");
-        if (errors == 0 && expected_errors == forced_errors)
-            $display("   PASSED - %0d tests, %0d testing errors (%0d/%0d expected errors detected)", tests_run, errors, expected_errors, forced_errors);
-        else
-            $display("   FAILED - %0d errors; %0d/%0d expected errors were not detected", errors, expected_errors, forced_errors);
-        $display("========================================");
+        $display("\n");
+        $display("┌──────────────────────────────────────────┐");
+        if (errors == 0 && expected_errors == forced_errors) begin
+            $display("|  PASSED - %0d tests, %0d testing errors    |", tests_run, errors);
+            $display("|  with %0d/%0d expected errors detected       |", expected_errors, forced_errors);
+        end else begin
+            $display("|  FAILED - %0d errors; %0d/%0d expected errors were not detected |", errors, expected_errors, forced_errors);
+        end
+        $display("└──────────────────────────────────────────┘");
 
         #100;
         $finish;

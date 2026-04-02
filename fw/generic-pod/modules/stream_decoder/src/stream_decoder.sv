@@ -8,8 +8,8 @@ module stream_decoder (
     input   logic i_rst_n,
     input   protocol_pkg::rxtx_data_t i_data,
     output  logic o_wren,
-    output  logic [7:0] o_wr_data,
-    output  logic [7:0] o_error_count
+    output  logic [pRXTX_DATA_WIDTH-1:0] o_wr_data,
+    output  logic [pRXTX_DATA_WIDTH-1:0] o_error_count
 );
 
     logic msg_start_detected;
@@ -24,10 +24,10 @@ module stream_decoder (
             o_wr_data <= 'h0;
         end else begin
             o_wren <= 1'b0;
-            if (i_data.valid && i_data.is_k && i_data.data == SYNC_STREAM.data) begin
+            if (i_data.valid && i_data.is_k && i_data.data == pSYNC_STREAM.data) begin
                 // end of message or IDLE bus packet -- drop packet
                 msg_start_detected <= 1'b0;
-            end else if (i_data.valid && i_data.is_k && i_data.data == MESSAGE_START.data) begin
+            end else if (i_data.valid && i_data.is_k && i_data.data == pMESSAGE_START.data) begin
                 // start of message -- drop packet
                 msg_start_detected <= 1'b1;
             end else if (msg_start_detected) begin

@@ -67,11 +67,11 @@ module top (
             gen_data <= '0; // Reset the data to be transmitted
         end else begin
             if (sw_state[3] || !link_locked) begin
-                gen_data <= SYNC_STREAM; // Transmit K28.5 until locked or if switch 3 is active
+                gen_data <= pSYNC_STREAM; // Transmit K28.5 until locked or if switch 3 is active
             end else begin
                 if (gen_data.data == 8'hFF) begin
-                    gen_data <= MESSAGE_START; // Transmit K28.1 after reaching max data value
-                end else if (gen_data == MESSAGE_START) begin
+                    gen_data <= pMESSAGE_START; // Transmit K28.1 after reaching max data value
+                end else if (gen_data == pMESSAGE_START) begin
                     gen_data.is_k <= 1'b0;
                     gen_data.data <= 'h0;
                 end else begin

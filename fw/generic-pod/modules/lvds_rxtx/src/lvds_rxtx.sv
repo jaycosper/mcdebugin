@@ -19,7 +19,7 @@ module lvds_rxtx (
 );
 
     symbol_t tx_data;
-    logic [9:0] rcvd_data;
+    logic [pENCODED_DATA_WIDTH-1:0] rcvd_data;
     rxtx_data_t rx_data;
 
     logic locked;
@@ -126,7 +126,7 @@ module lvds_rxtx (
             stCHECK: begin
                 // check data alignment
                 nstate = stCHECK;
-                if (o_dataout.data == SYNC_STREAM.data && o_dataout.is_k == SYNC_STREAM.is_k) begin
+                if (o_dataout.data == pSYNC_STREAM.data && o_dataout.is_k == pSYNC_STREAM.is_k) begin
                     // properly aligned -- expecting loopback of transmitted data
                     nstate = stLOCKED;
                 end else begin
