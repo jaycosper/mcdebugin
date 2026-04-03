@@ -9,7 +9,7 @@ module tb_msg_decoder;
     logic clk   = 0;
     logic rst_n = 0;
 
-    protocol_pkg::msg_data_t data, wr_data;
+    protocol_pkg::msg_data_t msg, wr_data;
     logic rdack, empty;
     logic [7:0] error_count;
 
@@ -20,7 +20,7 @@ module tb_msg_decoder;
         .i_clk      (clk),
         .i_rst_n    (rst_n),
         .i_msg_rdy  (!empty),
-        .i_msg      (data),
+        .i_msg      (msg),
         .o_msg_ack  (rdack),
         .o_header   (),
         .i_datain   ('X),
@@ -28,13 +28,27 @@ module tb_msg_decoder;
     );
 
     // 100 MHz clock (just for style — not required for this DUT)
-    localparam int CLK_FREQ_MHZ = 125;
-    localparam int CLK_PERIOD_NS = 1000 / CLK_FREQ_MHZ;
-    always #CLK_PERIOD_NS clk = ~clk;
+    localparam int lpCLK_FREQ_MHZ = 125;
+    localparam int lpCLK_PERIOD_NS = 2 * 1000 / lpCLK_FREQ_MHZ;
+    always #(lpCLK_PERIOD_NS/2) clk = ~clk;
+
+    // Test timeout logic to prevent infinite simulation runs
+    localparam int lpTB_TEST_TIMEOUT_NS = 100_000; // 100 microseconds
+    int to_counter = 0;
+    always_ff @(posedge clk) begin
+        if (to_counter >= lpTB_TEST_TIMEOUT_NS) begin
+            $display("%0t: ERROR! Testbench timeout reached. Ending simulation.", $time);
+            $finish;
+        end else begin
+            to_counter += lpCLK_PERIOD_NS;
+        end
+    end
 
     // ────────────────────────────────────────────────
     // Reset & stimulus
     // ────────────────────────────────────────────────
+    int test_errors = 0;
+    int test_num = 0;
     protocol_pkg::msg_data_t test_data;
 
     typedef struct {
@@ -43,6 +57,23 @@ module tb_msg_decoder;
         protocol_pkg::crc_t crc;
     } message_t;
     message_t test_msg;
+
+    function automatic int check_output(message_t expected_msg);
+        int errors = 0;
+        if (dut.hdr == expected_msg.hdr) begin
+            //$display("Header correctly decoded: %h", dut.hdr);
+        end else begin
+            $display("%0t: ERROR! Header mismatch. Expected %h but got %h", $time, expected_msg.hdr, dut.hdr);
+            errors++;
+        end
+        if (dut.crc == expected_msg.crc) begin
+            //$display("CRC correctly decoded: %h", dut.crc);
+        end else begin
+            $display("%0t: ERROR! CRC mismatch. Expected %h but got %h", $time, expected_msg.crc, dut.crc);
+            errors++;
+        end
+        return errors;
+    endfunction
 
     initial begin
         $dumpfile("tb_msg_decoder.vcd");
@@ -58,84 +89,144 @@ module tb_msg_decoder;
         $display("│   Starting self-check test   │");
         $display("└──────────────────────────────┘");
 
-        $display("Test 1: Simple message with no payload");
+        test_num = 1;
+        $display("Test %0d: Simple message with no payload", test_num);
         // load queue
         test_msg.hdr.marker = protocol_pkg::pHEADER_MARKER_VALID;
         test_msg.hdr.payload_length = 0;
         test_msg.hdr.tag = 1;
-        test_msg.hdr.cmd_rsp = 7;
+        test_msg.hdr.cmd_rsp = 10;
         test_msg.crc = 'hDEADBEEF; // dummy CRC for now
 
-        //for (int i=0; i<8; i++) begin
-            fifo.push_back(test_msg.hdr);
-            fifo.push_back(test_msg.crc);
-        //end
+        push_message(test_msg.hdr, 0); // header with no stall
+        push_message(test_msg.crc, 0); // CRC with no stall
         // clock DUT and check output
-        repeat (16) @(negedge clk);
+        while (!dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
         if (fifo.size() != 0) begin
-            $display("ERROR: Expected input data to be read out but found %0d items remaining", fifo.size());
-            errors += fifo.size();
+            $display("%0t: ERROR! Expected input data to be read out but found %0d items remaining", $time, fifo.size());
+            test_errors += fifo.size();
         end
+        test_errors += check_output(test_msg);
+        while (dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
 
         repeat (10) @(negedge clk);
-        $display("Test 2: Simple message with nominal payload");
+        test_num = 2;
+        $display("");
+        $display("Test %0d: Simple message with nominal payload", test_num);
         // load queue
         test_msg.hdr.marker = protocol_pkg::pHEADER_MARKER_VALID;
         test_msg.hdr.payload_length = 4;
         test_msg.hdr.tag = 2;
-        test_msg.hdr.cmd_rsp = 7;
+        test_msg.hdr.cmd_rsp = 11;
         test_msg.crc = 'hDEADBEEF; // dummy CRC for now
 
-        fifo.push_back(test_msg.hdr);
+        push_message(test_msg.hdr, 0); // header with no stall
         for (int i=0; i<test_msg.hdr.payload_length; i++) begin
             test_msg.data[i] = i+1; // incrementing payload data
-            fifo.push_back(test_msg.data[i]);
+            push_message(test_msg.data[i], 0); // payload data with no stall
         end
-        fifo.push_back(test_msg.crc);
+        push_message(test_msg.crc, 0); // CRC with no stall
 
         // clock DUT and check output
+        while (!dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
+        if (fifo.size() != 0) begin
+            $display("%0t: ERROR! Expected input data to be read out but found %0d items remaining", $time, fifo.size());
+            test_errors += fifo.size();
+        end
+        test_errors += check_output(test_msg);
+        while (dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
+
+        repeat (10) @(negedge clk);
+        test_num = 3;
+        $display("");
+        $display("Test %0d: Message with payload length at max limit", test_num);
+        // load queue
+        test_msg.hdr.marker = protocol_pkg::pHEADER_MARKER_VALID;
+        test_msg.hdr.payload_length = $size(test_msg.hdr.payload_length)'(protocol_pkg::pMAX_PAYLOAD_DW); // max payload length
+        test_msg.hdr.tag = 3;
+        test_msg.hdr.cmd_rsp = 12;
+        test_msg.crc = 'hDEADBEEF; // dummy CRC for now
+
+        push_message(test_msg.hdr, 0); // header with no stall
+        for (int i=0; i<test_msg.hdr.payload_length; i++) begin
+            test_msg.data[i] = {16'(i), 16'(protocol_pkg::pMAX_PAYLOAD_DW-i-1)}; // decrementing payload data
+            push_message(test_msg.data[i], 0); // payload data with no stall
+        end
+        push_message(test_msg.crc, 0); // CRC with no stall
+
+        // clock DUT and check output
+        while (!dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
+        if (fifo.size() != 0) begin
+            $display("%0t: ERROR! Expected input data to be read out but found %0d items remaining", $time, fifo.size());
+            test_errors += fifo.size();
+        end
+        test_errors += check_output(test_msg);
+        while (dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
+
+        repeat (10) @(negedge clk);
+        test_num = 4;
+        $display("");
+        $display("Test %0d: Message with payload and fixed data stalls", test_num);
+        // load queue
+        test_msg.hdr.marker = protocol_pkg::pHEADER_MARKER_VALID;
+        test_msg.hdr.payload_length = 8;
+        test_msg.hdr.tag = 4;
+        test_msg.hdr.cmd_rsp = 13;
+        test_msg.crc = 'hDEADBEEF; // dummy CRC for now
+
+        push_message(test_msg.hdr, 2);
+        for (int i=0; i<test_msg.hdr.payload_length; i++) begin
+            test_msg.data[i] = {4{ 8'($urandom_range(0, 255) )}}; // random payload data
+            push_message(test_msg.data[i], 2);
+        end
+        push_message(test_msg.crc, 2);
+
+        // clock DUT and check output
+        while (!dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
         repeat (32) @(negedge clk);
         if (fifo.size() != 0) begin
-            $display("ERROR: Expected input data to be read out but found %0d items remaining", fifo.size());
-            errors += fifo.size();
+            $display("%0t: ERROR! Expected input data to be read out but found %0d items remaining", $time, fifo.size());
+            test_errors += fifo.size();
         end
+        test_errors += check_output(test_msg);
+        while (dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
 
-        // repeat (10) @(negedge clk);
-        // // Test 2: all IDLE control characters (K28.5)
-        // $display("Test 2: Simple message stream (K28.1 followed by data bytes) and then IDLE characters");
-        // // load queue
-        // test_data = '{default:0, valid: 1'b1, is_k: 1'b1, data: 8'hBC}; // K28.5
-        // for (int i=0; i<2; i++) begin
-        //     queue_in.push_back(test_data);
-        // end
-        // test_data = '{default:0, valid: 1'b1, is_k: 1'b1, data: 8'h3C}; // K28.1
-        // queue_in.push_back(test_data);
-        // for (int i=0; i<8; i++) begin
-        //     test_data = '{default:0, valid: 1'b1, is_k: 1'b0, data: 8'(i+1)}; // data bytes
-        //     queue_in.push_back(test_data);
-        // end
-        // test_data = '{default:0, valid: 1'b1, is_k: 1'b1, data: 8'hBC}; // K28.5
-        // for (int i=0; i<2; i++) begin
-        //     queue_in.push_back(test_data);
-        // end
-        // // clock DUT and check output
-        // repeat (100) @(negedge clk);
-        // if (queue_in.size() != 0) begin
-        //     $display("ERROR: Expected input data to be read out but found %0d items remaining", queue_in.size());
-        //     errors += queue_in.size();
-        // end
-        // if (queue_out.size() != 8) begin
-        //     $display("ERROR: Expected 8 items in output, but found %0d items", queue_out.size());
-        //     errors += queue_out.size();
-        // end
+        repeat (10) @(negedge clk);
+        test_num = 5;
+        $display("");
+        $display("Test %0d: Message with payload and random data stalls", test_num);
+        // load queue
+        test_msg.hdr.marker = protocol_pkg::pHEADER_MARKER_VALID;
+        test_msg.hdr.payload_length = 8;
+        test_msg.hdr.tag = 5;
+        test_msg.hdr.cmd_rsp = 14;
+        test_msg.crc = 'hDEADBEEF; // dummy CRC for now
+
+        push_message(test_msg.hdr, $urandom_range(0, 5));
+        for (int i=0; i<test_msg.hdr.payload_length; i++) begin
+            test_msg.data[i] = $urandom_range(0, 255); // random payload data
+            push_message(test_msg.data[i], $urandom_range(0, 5));
+        end
+        push_message(test_msg.crc, $urandom_range(0, 5));
+
+        // clock DUT and check output
+        while (!dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
+        repeat (64) @(negedge clk);
+        if (fifo.size() != 0) begin
+            $display("%0t: ERROR! Expected input data to be read out but found %0d items remaining", $time, fifo.size());
+            test_errors += fifo.size();
+        end
+        test_errors += check_output(test_msg);
+        while (dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
 
         // Final report
         $display("");
+        $display("%d Test(s) completed at %0t", test_num, $time);
         $display("┌──────────────────────────────┐");
-        if (errors == 0)
+        if (test_errors == 0)
             $display("│       PASS ─ All checks OK   │");
         else
-            $display("│       FAIL ─ %0d errors      │", errors);
+            $display("│       FAIL ─ %0d errors      │", test_errors);
         $display("└──────────────────────────────┘");
 
         #100;
@@ -146,14 +237,22 @@ module tb_msg_decoder;
     // Self-checking logic
     // ────────────────────────────────────────────────
     int errors = 0;
-    protocol_pkg::msg_data_t fifo [$];
+    typedef struct packed {
+        int stall_cycles;
+        protocol_pkg::msg_data_t data;
+    } generated_data_t;
+    generated_data_t fifo [$];
+
+    function void push_message(protocol_pkg::msg_data_t data, int stall_cycles);
+        generated_data_t item;
+        item.data = data;
+        item.stall_cycles = stall_cycles;
+        repeat(stall_cycles) @(negedge clk); // simulate data stall by waiting before pushing to FIFO
+        fifo.push_back(item);
+    endfunction
 
     // Look-ahead FIFO logic
     always_ff @(posedge clk) begin
-        // if (wren) begin
-        //     fifo.push_back(wr_data);
-        // end
-
         if (fifo.size() > 0) begin
             empty <= 1'b0;
             if (rdack) begin
@@ -166,9 +265,9 @@ module tb_msg_decoder;
 
     always_comb begin
         if (fifo.size() > 0) begin
-            data = fifo[0]; // equivalent to a "peek"
+            msg = fifo[0].data; // equivalent to a "peek"
         end else begin
-            data = 'X;
+            msg = 'X;
         end
     end
 
