@@ -183,7 +183,6 @@ module tb_msg_decoder;
 
         // clock DUT and check output
         while (!dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
-        repeat (32) @(negedge clk);
         if (fifo.size() != 0) begin
             $display("%0t: ERROR! Expected input data to be read out but found %0d items remaining", $time, fifo.size());
             test_errors += fifo.size();
@@ -211,7 +210,6 @@ module tb_msg_decoder;
 
         // clock DUT and check output
         while (!dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
-        repeat (64) @(negedge clk);
         if (fifo.size() != 0) begin
             $display("%0t: ERROR! Expected input data to be read out but found %0d items remaining", $time, fifo.size());
             test_errors += fifo.size();
@@ -254,20 +252,19 @@ module tb_msg_decoder;
     // Look-ahead FIFO logic
     always_ff @(posedge clk) begin
         if (fifo.size() > 0) begin
-            empty <= 1'b0;
             if (rdack) begin
                 fifo.pop_front(); // remove the item after acknowledging it
             end
-        end else begin
-            empty <= 1'b1;
         end
     end
 
     always_comb begin
         if (fifo.size() > 0) begin
             msg = fifo[0].data; // equivalent to a "peek"
+            empty = 1'b0;
         end else begin
             msg = 'X;
+            empty = 1'b1;
         end
     end
 
