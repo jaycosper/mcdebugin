@@ -49,6 +49,13 @@ package protocol_pkg;
     parameter int pMSG_CRC_WIDTH = 32;
     typedef logic [pMSG_CRC_WIDTH-1:0] crc_t;
 
+    typedef struct packed {
+        header_t hdr;
+        // this needs to be packed array
+        msg_data_t [pMAX_PAYLOAD_DW-1:0] payload;
+        crc_t crc;
+    } cmd_rsp_t;
+
     // parameter int pMAX_PAYLOAD_BYTES = 2**pPAYLOAD_LENGTH_WIDTH - $size(header_t)/8 - $size(crc_t)/8; // 64KB max message size minus header and CRC overhead
     parameter int pMAX_PAYLOAD_DW = 32; // test case 32 DW = 128B
 

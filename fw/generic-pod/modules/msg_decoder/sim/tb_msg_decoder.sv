@@ -11,6 +11,7 @@ module tb_msg_decoder;
 
     protocol_pkg::msg_data_t msg, wr_data;
     logic rdack, empty;
+    protocol_pkg::cmd_rsp_t cmd;
     logic [7:0] error_count;
 
     // ────────────────────────────────────────────────
@@ -22,6 +23,7 @@ module tb_msg_decoder;
         .i_msg_rdy  (!empty),
         .i_msg      (msg),
         .o_msg_ack  (rdack),
+        .o_cmd      (cmd),
         .o_header   (),
         .i_datain   ('X),
         .o_dataout  ()
@@ -51,25 +53,20 @@ module tb_msg_decoder;
     int test_num = 0;
     protocol_pkg::msg_data_t test_data;
 
-    typedef struct {
-        protocol_pkg::header_t hdr;
-        protocol_pkg::msg_data_t data [0:protocol_pkg::pMAX_PAYLOAD_DW-1];
-        protocol_pkg::crc_t crc;
-    } message_t;
-    message_t test_msg;
+    protocol_pkg::cmd_rsp_t test_msg;
 
-    function automatic int check_output(message_t expected_msg);
+    function automatic int check_output(protocol_pkg::cmd_rsp_t expected_msg);
         int errors = 0;
-        if (dut.hdr == expected_msg.hdr) begin
+        if (dut.cmd.hdr == expected_msg.hdr) begin
             //$display("Header correctly decoded: %h", dut.hdr);
         end else begin
-            $display("%0t: ERROR! Header mismatch. Expected %h but got %h", $time, expected_msg.hdr, dut.hdr);
+            $display("%0t: ERROR! Header mismatch. Expected %h but got %h", $time, expected_msg.hdr, dut.cmd.hdr);
             errors++;
         end
-        if (dut.crc == expected_msg.crc) begin
+        if (dut.cmd.crc == expected_msg.crc) begin
             //$display("CRC correctly decoded: %h", dut.crc);
         end else begin
-            $display("%0t: ERROR! CRC mismatch. Expected %h but got %h", $time, expected_msg.crc, dut.crc);
+            $display("%0t: ERROR! CRC mismatch. Expected %h but got %h", $time, expected_msg.crc, dut.cmd.crc);
             errors++;
         end
         return errors;
@@ -122,8 +119,8 @@ module tb_msg_decoder;
 
         push_message(test_msg.hdr, 0); // header with no stall
         for (int i=0; i<test_msg.hdr.payload_length; i++) begin
-            test_msg.data[i] = i+1; // incrementing payload data
-            push_message(test_msg.data[i], 0); // payload data with no stall
+            test_msg.payload[i] = i+1; // incrementing payload data
+            push_message(test_msg.payload[i], 0); // payload data with no stall
         end
         push_message(test_msg.crc, 0); // CRC with no stall
 
@@ -149,8 +146,8 @@ module tb_msg_decoder;
 
         push_message(test_msg.hdr, 0); // header with no stall
         for (int i=0; i<test_msg.hdr.payload_length; i++) begin
-            test_msg.data[i] = {16'(i), 16'(protocol_pkg::pMAX_PAYLOAD_DW-i-1)}; // decrementing payload data
-            push_message(test_msg.data[i], 0); // payload data with no stall
+            test_msg.payload[i] = {16'(i), 16'(protocol_pkg::pMAX_PAYLOAD_DW-i-1)}; // decrementing payload data
+            push_message(test_msg.payload[i], 0); // payload data with no stall
         end
         push_message(test_msg.crc, 0); // CRC with no stall
 
@@ -176,8 +173,8 @@ module tb_msg_decoder;
 
         push_message(test_msg.hdr, 2);
         for (int i=0; i<test_msg.hdr.payload_length; i++) begin
-            test_msg.data[i] = {4{ 8'($urandom_range(0, 255) )}}; // random payload data
-            push_message(test_msg.data[i], 2);
+            test_msg.payload[i] = {4{ 8'($urandom_range(0, 255) )}}; // random payload data
+            push_message(test_msg.payload[i], 2);
         end
         push_message(test_msg.crc, 2);
 
@@ -203,8 +200,8 @@ module tb_msg_decoder;
 
         push_message(test_msg.hdr, $urandom_range(0, 5));
         for (int i=0; i<test_msg.hdr.payload_length; i++) begin
-            test_msg.data[i] = $urandom_range(0, 255); // random payload data
-            push_message(test_msg.data[i], $urandom_range(0, 5));
+            test_msg.payload[i] = $urandom_range(0, 255); // random payload data
+            push_message(test_msg.payload[i], $urandom_range(0, 5));
         end
         push_message(test_msg.crc, $urandom_range(0, 5));
 

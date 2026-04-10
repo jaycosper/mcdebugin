@@ -4,12 +4,12 @@
 import protocol_pkg::*;
 
 module lvds_rxtx (
-    input   logic i_clk,
-    input   logic i_rst_n,
-    input   logic i_frame_clk,
+    input   wire i_clk,
+    input   wire i_rst_n,
+    input   wire i_frame_clk,
 
     output  logic o_lvds_clk,
-    input   logic i_lvds_rx,
+    input   wire i_lvds_rx,
     output  logic o_lvds_tx,
 
     // clocked in i_frame_clk domain
