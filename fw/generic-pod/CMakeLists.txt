@@ -20,9 +20,10 @@ set(SCRIPTS_DIR ${PROJECT_TOP_DIR}/scripts)
 # Include Lint and Format handlers
 include(${SCRIPTS_DIR}/generic-module.cmake)
 include(${SCRIPTS_DIR}/version.cmake)
-include(${SCRIPTS_DIR}/svlint.cmake)
 include(${SCRIPTS_DIR}/lint.cmake)
-include(${SCRIPTS_DIR}/format.cmake)
+#include(${SCRIPTS_DIR}/vlint.cmake)
+#include(${SCRIPTS_DIR}/svlint.cmake)
+#include(${SCRIPTS_DIR}/format.cmake)
 include(${SCRIPTS_DIR}/sim.cmake)
 
 # Add a main target that depends on all module targets

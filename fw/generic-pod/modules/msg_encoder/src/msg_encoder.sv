@@ -3,17 +3,56 @@
 
 import protocol_pkg::*;
 
-module msg_decoder (
-    input   wire    i_clk,
-    input   wire    i_rst_n,
+module msg_encoder (
+    input   wire        i_clk,
+    input   wire        i_rst_n,
 
+    input   cmd_rsp_t   i_rsp,
+    input   wire        i_rsp_ready,
+    output  logic       o_rsp_sent,
+
+    // STOPPED HERE!
     input   wire    i_msg_rdy,
     input   wire [pMSG_DATA_WIDTH-1:0] i_msg,
     output  logic   o_msg_ack,
-    output  cmd_rsp_t o_cmd,
-    output  logic   o_cmd_valid,
-    input   wire    i_cmd_complete
 );
+
+    TODO: this needs to be in here if I want to test -- maybe TESTMODE/LOOPBACK flag
+    always_ff @(posedge lvds_clk_slow) begin
+        if (!sys_rst_n) begin
+            gen_data <= '0; // Reset the data to be transmitted
+        end else begin
+            if (sw_state[3] || !link_locked) begin
+                gen_data <= pSYNC_STREAM; // Transmit K28.5 until locked or if switch 3 is active
+            end else begin
+                if (gen_data.data == 8'hFF) begin
+                    gen_data <= pMESSAGE_START; // Transmit K28.1 after reaching max data value
+                end else if (gen_data == pMESSAGE_START) begin
+                    gen_data.is_k <= 1'b0;
+                    gen_data.data <= 'h0;
+                end else begin
+                    gen_data.is_k <= 1'b0;
+                    gen_data.data <= gen_data.data + 1'b1; // Increment the data to be transmitted
+                end
+                gen_data.data <= gen_data.data + 1'b1; // Increment the data to be transmitted
+            end
+        end
+    end
+
+    // lvds_rxtx u_lvd_rxtx (
+    //     .i_clk(sys_clk),
+    //     .i_rst_n(sys_rst_n),
+    //     .i_frame_clk(lvds_clk_slow),
+
+    //     .o_lvds_clk(o_lvds_clk),
+    //     .i_lvds_rx(i_lvds_rx),
+    //     .o_lvds_tx(o_lvds_tx),
+
+    //     // clocked in i_frame_clk domain
+    //     .o_link_locked(link_locked),
+    //     .i_datain(gen_data),
+    //     .o_dataout(rcvd_data)
+    // );
 
     // State machine for decoding incoming messages
     // Once locked, data transmission is expected to be stable

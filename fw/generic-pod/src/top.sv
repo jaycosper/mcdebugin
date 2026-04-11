@@ -62,42 +62,27 @@ module top (
     // use upper bits of counter to drive LEDs, creating a slow counting effect
     assign o_leds = (sw_state[2]) ? counter[23:19] : rcvd_data.data[7:3]; // switch between counter and received data for LEDs
 
-    always_ff @(posedge lvds_clk_slow) begin
-        if (!sys_rst_n) begin
-            gen_data <= '0; // Reset the data to be transmitted
-        end else begin
-            if (sw_state[3] || !link_locked) begin
-                gen_data <= pSYNC_STREAM; // Transmit K28.5 until locked or if switch 3 is active
-            end else begin
-                if (gen_data.data == 8'hFF) begin
-                    gen_data <= pMESSAGE_START; // Transmit K28.1 after reaching max data value
-                end else if (gen_data == pMESSAGE_START) begin
-                    gen_data.is_k <= 1'b0;
-                    gen_data.data <= 'h0;
-                end else begin
-                    gen_data.is_k <= 1'b0;
-                    gen_data.data <= gen_data.data + 1'b1; // Increment the data to be transmitted
-                end
-                gen_data.data <= gen_data.data + 1'b1; // Increment the data to be transmitted
-            end
-        end
-    end
+    logic cmd_valid, rsp_ready, rsp_sent;
+    cmd_rsp_t cmd, rsp;
+    logic cmd_complete;
 
-    lvds_rxtx u_lvd_rxtx (
-        .i_clk(sys_clk),
+    pod_protocol u_pod_protocol (
+        .i_clk(i_clk),
+        .i_frame_clk(i_frame_clk),
         .i_rst_n(sys_rst_n),
-        .i_frame_clk(lvds_clk_slow),
-
+        // physical interface
         .o_lvds_clk(o_lvds_clk),
         .i_lvds_rx(i_lvds_rx),
-        .o_lvds_tx(o_lvds_tx),
-
-        // clocked in i_frame_clk domain
-        .o_link_locked(link_locked),
-        .i_datain(gen_data),
-        .o_dataout(rcvd_data)
+        .o_lvds_tx(i_lvds_tx),
+        // system interfaces - command
+        .o_cmd_valid    (cmd_valid),
+        .o_cmd          (cmd),
+        .i_cmd_complete (cmd_complete),
+        // system interfaces - response
+        .i_rsp_ready    (rsp_ready),
+        .i_rsp          (rsp),
+        .o_rsp_sent     (rsp_sent) // not sure if this is necessary
     );
-
 endmodule
 
 `default_nettype wire

@@ -10,23 +10,14 @@ module pod_protocol (
     input   wire    i_lvds_rx,
     output  logic   o_lvds_tx
     // system interfaces - command
-    output  logic       o_cmd_ready,
-    output  logic [7:0] o_flush_count,
-    output  msg_data_t  o_cmd_data,
-    input   wire        i_cmd_ack,
-    output  logic       o_cmd_fifo_empty,
+    output  logic       o_cmd_valid,
+    output  cmd_rsp_t   o_cmd,
+    input   wire        i_cmd_complete,
     // system interfaces - response
-    input   wire        i_rsp_ready,
-    input   logic [7:0] i_rsp_count,
-    input   wire        i_rsp_wren,
-    input   msg_data_t  i_rsp_data,
-    output  logic       o_rsp_fifo_full
-    );
-
-// instaniate modules:
-// xclk_fifo
-// msg decoder
-// cmd_rsp_fifo
+    input  wire         i_rsp_ready,
+    input  cmd_rsp_t    i_rsp,
+    output  logic       o_rsp_sent
+);
 
 logic link_locked,
 rxtx_data_t datain, dataout;
@@ -47,7 +38,7 @@ lvds_rxtx u_lvds_rxtx (
     .o_dataout      (dataout)
 );
 
-// In-bound (IB) message path: LVDS RX -> stream decoder -> IB FIFO -> message decoder -> command FIFO -> system
+// In-bound (IB) message path: LVDS RX -> stream decoder -> IB FIFO -> message decoder -> (command FIFO) -> system
 logic ib_wren;
 logic [7:0] ib_data;
 logic [7:0] error_count;
@@ -63,54 +54,45 @@ stream_decoder u_stream_decoder (
 
 logic ib_fifo_full;
 logic ib_fifo_empty;
-logic [7:0] ib_fifo_rd_data;
+logic [31:0] ib_fifo_rd_data;
 logic ib_ack;
 
 xclk_fifo u_ib_msg_fifo (
-    .i_clk          (i_frame_clk),
-    .i_rst_n        (i_rst_n),
-    .i_wren         (ib_wren),
-    .i_wr_data      (ib_data),
-    .o_full         (ib_fifo_full),
-    .o_empty        (ib_fifo_empty),
-    .o_rd_data      (ib_fifo_rd_data),
-    .i_rden         (ib_ack)
+    .wrclk  (i_frame_clk),
+    .wrreq  (ib_wren),
+    .wrfull (ib_fifo_full),
+    .data   (ib_data),
+    .rdclk  (i_clk),
+    .rdreq  (ib_ack),
+    .q      (ib_fifo_rd_data),
+    .rdempty(ib_fifo_empty)
 );
 
-logic cmd_wren;
-msg_data_t cmd_data;
-msg_data_t cmd_fifo_full;
+cmd_rsp_t cmd;
+logic cmd_valid, cmd_complete;
 
 msg_decoder u_msg_decoder (
-    .i_clk      (i_clk),
-    .i_rst_n    (i_rst_n),
-    .i_msg_rdy  (!ib_fifo_empty),
-    .i_msg      (ib_fifo_rd_data),
-    .o_msg_ack  (ib_ack),
-    .o_header   (),
-    .i_datain   ('0),
-    .o_wren     (cmd_wren),
-    .o_dataout  (cmd_data),
-    .o_stall    (cmd_data_full)
+    .i_clk          (i_clk),
+    .i_rst_n        (i_rst_n),
+    .i_msg_rdy      (!ib_fifo_empty),
+    .i_msg          (ib_fifo_rd_data),
+    .o_msg_ack      (ib_ack),
+    .o_cmd          (o_cmd)
+    .o_cmd_valid    (o_cmd_valid),
+    .i_cmd_complete (i_cmd_complete)
 );
 
-`ifdef SUPPORT_MULIPLE_COMMANDS
-cmd_rsp_fifo u_cmd_fifo (
-    .clock(i_clk),
-    .wrreq(cmd_wren),
-    .data(cmd_data),
-    .full(cmd_data_full),
-    // to system
-    .rdreq,
-    .q,
-    .empty,
-    .usedw()
+// Out-bound (OB) message path: system -> (response FIFO) -> message encoder -> OB FIFO -> stream encoder -> LVDS TX
+rsp_encoder u_msg_encoder (
+    .i_clk          (i_clk),
+    .i_rst_n        (i_rst_n),
+    .i_msg_rdy      (!ib_fifo_empty),
+    .i_msg          (ib_fifo_rd_data),
+    .o_msg_ack      (ib_ack),
+    .o_cmd          (o_cmd)
+    .o_cmd_valid    (o_cmd_valid),
+    .i_cmd_complete (i_cmd_complete)
 );
-`else
-//tbd
-`endif
-
-// Out-bound (OB) message path: system -> response FIFO -> message encoder -> OB FIFO -> stream encoder -> LVDS TX
 
 endmodule
 
