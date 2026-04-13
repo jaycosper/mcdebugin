@@ -57,7 +57,7 @@ logic ib_fifo_empty;
 logic [31:0] ib_fifo_rd_data;
 logic ib_ack;
 
-xclk_fifo u_ib_msg_fifo (
+ib_xclk_fifo u_ib_msg_fifo (
     .wrclk  (i_frame_clk),
     .wrreq  (ib_wren),
     .wrfull (ib_fifo_full),
@@ -82,16 +82,76 @@ msg_decoder u_msg_decoder (
     .i_cmd_complete (i_cmd_complete)
 );
 
+// ******
+// Process Commands and generate responses here
+//  // TODO: this needs to be in here if I want to test -- maybe TESTMODE/LOOPBACK flag
+//  always_ff @(posedge lvds_clk_slow) begin
+//      if (!sys_rst_n) begin
+//          gen_data <= '0; // Reset the data to be transmitted
+//      end else begin
+//          if (sw_state[3] || !link_locked) begin
+//              gen_data <= pSYNC_STREAM; // Transmit K28.5 until locked or if switch 3 is active
+//          end else begin
+//              if (gen_data.data == 8'hFF) begin
+//                  gen_data <= pMESSAGE_START; // Transmit K28.1 after reaching max data value
+//              end else if (gen_data == pMESSAGE_START) begin
+//                  gen_data.is_k <= 1'b0;
+//                  gen_data.data <= 'h0;
+//              end else begin
+//                  gen_data.is_k <= 1'b0;
+//                  gen_data.data <= gen_data.data + 1'b1; // Increment the data to be transmitted
+//              end
+//              gen_data.data <= gen_data.data + 1'b1; // Increment the data to be transmitted
+//          end
+//      end
+//  end
+// ******
+
 // Out-bound (OB) message path: system -> (response FIFO) -> message encoder -> OB FIFO -> stream encoder -> LVDS TX
+cmd_rsp_t rsp;
+logic rsp_ready, rsp_sent;
+logic ob_fifo_wren;
+logic [31:0] ob_fifo_wr_data;
+logic ob_fifo_full;
+
 rsp_encoder u_msg_encoder (
     .i_clk          (i_clk),
     .i_rst_n        (i_rst_n),
-    .i_msg_rdy      (!ib_fifo_empty),
-    .i_msg          (ib_fifo_rd_data),
-    .o_msg_ack      (ib_ack),
-    .o_cmd          (o_cmd)
-    .o_cmd_valid    (o_cmd_valid),
-    .i_cmd_complete (i_cmd_complete)
+    .o_rsp          (rsp),
+    .o_rsp_ready    (rsp_ready),
+    .i_rsp_sent     (rsp_sent),
+    .o_msg_wren     (ob_fifo_wren),
+    .o_msg          (ob_fifo_wr_data),
+    .i_msg_stall    (ob_fifo_full)
+);
+
+logic ob_fifo_empty;
+logic [7:0] ob_data;
+logic ob_ack;
+
+ob_xclk_fifo u_ob_msg_fifo (
+    .wrclk  (i_clk),
+    .wrreq  (ob_fifo_wren),
+    .wrfull (ob_fifo_full),
+    .data   (ob_fifo_wr_data),
+    .rdclk  (i_frame_clk),
+    .rdreq  (ob_ack),
+    .q      (ob_data),
+    .rdempty(ob_fifo_empty)
+);
+
+logic ob_wren, ob_msg_ready;
+logic [7:0] ob_error_count;
+assign ob_msg_ready = !ob_fifo_empty;
+
+stream_encoder u_stream_encoder (
+    .i_clk          (i_frame_clk),
+    .i_rst_n        (i_rst_n),
+    .o_data         (datain),
+    .i_msg_ready    (ob_msg_ready),
+    .o_rden         (ob_ack),
+    .i_wr_data      (ob_data),
+    .i_error_count  (ob_error_count)
 );
 
 endmodule

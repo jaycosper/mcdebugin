@@ -1,10 +1,10 @@
-// megafunction wizard: %FIFO%VBB%
+// megafunction wizard: %FIFO%
 // GENERATION: STANDARD
 // VERSION: WM1.0
-// MODULE: dcfifo_mixed_widths
+// MODULE: dcfifo_mixed_widths 
 
 // ============================================================
-// File Name: xclk_fifo.v
+// File Name: ib_xclk_fifo.v
 // Megafunction Name(s):
 // 			dcfifo_mixed_widths
 //
@@ -17,22 +17,27 @@
 // 25.1std.0 Build 1129 10/21/2025 SC Lite Edition
 // ************************************************************
 
+
 //Copyright (C) 2025  Altera Corporation. All rights reserved.
-//Your use of Altera Corporation's design tools, logic functions
-//and other software and tools, and any partner logic
-//functions, and any output files from any of the foregoing
-//(including device programming or simulation files), and any
-//associated documentation or information are expressly subject
-//to the terms and conditions of the Altera Program License
+//Your use of Altera Corporation's design tools, logic functions 
+//and other software and tools, and any partner logic 
+//functions, and any output files from any of the foregoing 
+//(including device programming or simulation files), and any 
+//associated documentation or information are expressly subject 
+//to the terms and conditions of the Altera Program License 
 //Subscription Agreement, the Altera Quartus Prime License Agreement,
 //the Altera IP License Agreement, or other applicable license
 //agreement, including, without limitation, that your use is for
 //the sole purpose of programming logic devices manufactured by
 //Altera and sold by Altera or its authorized distributors.  Please
-//refer to the Altera Software License Subscription Agreements
+//refer to the Altera Software License Subscription Agreements 
 //on the Quartus Prime software download page.
 
-module xclk_fifo (
+
+// synopsys translate_off
+`timescale 1 ps / 1 ps
+// synopsys translate_on
+module ib_xclk_fifo (
 	data,
 	rdclk,
 	rdreq,
@@ -50,6 +55,44 @@ module xclk_fifo (
 	output	[31:0]  q;
 	output	  rdempty;
 	output	  wrfull;
+
+	wire [31:0] sub_wire0;
+	wire  sub_wire1;
+	wire  sub_wire2;
+	wire [31:0] q = sub_wire0[31:0];
+	wire  rdempty = sub_wire1;
+	wire  wrfull = sub_wire2;
+
+	dcfifo_mixed_widths	dcfifo_mixed_widths_component (
+				.data (data),
+				.rdclk (rdclk),
+				.rdreq (rdreq),
+				.wrclk (wrclk),
+				.wrreq (wrreq),
+				.q (sub_wire0),
+				.rdempty (sub_wire1),
+				.wrfull (sub_wire2),
+				.aclr (1'b0),
+				.eccstatus (),
+				.rdfull (),
+				.rdusedw (),
+				.wrempty (),
+				.wrusedw ());
+	defparam
+		dcfifo_mixed_widths_component.intended_device_family = "MAX 10",
+		dcfifo_mixed_widths_component.lpm_numwords = 1024,
+		dcfifo_mixed_widths_component.lpm_showahead = "ON",
+		dcfifo_mixed_widths_component.lpm_type = "dcfifo_mixed_widths",
+		dcfifo_mixed_widths_component.lpm_width = 8,
+		dcfifo_mixed_widths_component.lpm_widthu = 10,
+		dcfifo_mixed_widths_component.lpm_widthu_r = 8,
+		dcfifo_mixed_widths_component.lpm_width_r = 32,
+		dcfifo_mixed_widths_component.overflow_checking = "ON",
+		dcfifo_mixed_widths_component.rdsync_delaypipe = 4,
+		dcfifo_mixed_widths_component.underflow_checking = "ON",
+		dcfifo_mixed_widths_component.use_eab = "ON",
+		dcfifo_mixed_widths_component.wrsync_delaypipe = 4;
+
 
 endmodule
 
@@ -118,10 +161,10 @@ endmodule
 // Retrieval info: CONNECT: q 0 0 32 0 @q 0 0 32 0
 // Retrieval info: CONNECT: rdempty 0 0 0 0 @rdempty 0 0 0 0
 // Retrieval info: CONNECT: wrfull 0 0 0 0 @wrfull 0 0 0 0
-// Retrieval info: GEN_FILE: TYPE_NORMAL xclk_fifo.v TRUE
-// Retrieval info: GEN_FILE: TYPE_NORMAL xclk_fifo.inc FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL xclk_fifo.cmp FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL xclk_fifo.bsf FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL xclk_fifo_inst.v FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL xclk_fifo_bb.v TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL ib_xclk_fifo.v TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL ib_xclk_fifo.inc FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL ib_xclk_fifo.cmp FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL ib_xclk_fifo.bsf FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL ib_xclk_fifo_inst.v FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL ib_xclk_fifo_bb.v TRUE
 // Retrieval info: LIB_FILE: altera_mf

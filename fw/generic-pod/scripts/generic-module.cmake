@@ -52,6 +52,7 @@ function(create_module_targets)
     set(GLOBAL_SOURCES ${GLOBAL_SOURCES} PARENT_SCOPE)
 
     list(APPEND MODULE_LINT_OPTIONS ${GLOBAL_LINT_OPTIONS})
+    list(APPEND MODULE_VLINT_OPTIONS ${GLOBAL_VLINT_OPTIONS})
     list(APPEND MODULE_SVLINT_OPTIONS ${GLOBAL_SVLINT_OPTIONS})
     set(SIM_EXE_NAME V${fMODULE_NAME}-sim)
     list(APPEND MODULE_SIM_OPTIONS ${GLOBAL_SIM_OPTIONS} -o ${SIM_EXE_NAME} --Mdir ${SIM_ARTIFACTS_DIR})
@@ -63,6 +64,15 @@ function(create_module_targets)
         COMMAND ${SV_CODE_LINTER} ${MODULE_SVLINT_OPTIONS} ${fSOURCES}
         WORKING_DIRECTORY ${fMODULE_DIR}
         COMMENT "Running SV linter on ${fMODULE_NAME} sources: ${fSOURCES}"
+        VERBATIM
+    )
+
+    # Add a custom target for Verible linting the library's sources
+    add_custom_target(
+        vlint-${fMODULE_NAME}
+        COMMAND ${VERIBLE_CODE_LINTER} ${MODULE_VLINT_OPTIONS} ${fSOURCES}
+        WORKING_DIRECTORY ${fMODULE_DIR}
+        COMMENT "Running linter on ${fMODULE_NAME} sources: ${fSOURCES}"
         VERBATIM
     )
 

@@ -20,6 +20,12 @@ sv-lint : init-project
 # create verible-verilog-lint target
 verible-lint : init-project
 	@echo "+---------- verible-verilog-lint ----------------+"
+	@cd _build && make vlint
+	@echo "+------------------------------------------------+"
+
+# create verilator-lint target
+verilator-lint : init-project
+	@echo "+---------- verilator-lint ----------------+"
 	@cd _build && make lint
 	@echo "+------------------------------------------------+"
 
@@ -66,7 +72,8 @@ project-help :
 	@echo "	make version            - generate version package"
 	@echo "	make format             - format source files"
 	@echo "	make lint               - run all linters (verible-verilog-lint, sv-lint)"
-	@echo "	make ver-lint           - run verible-verilog-lint"
+	@echo "	make verilator-lint     - run verilator-lint"
+	@echo "	make verible-lint       - run verible-verilog-lint"
 	@echo "	make sv-lint            - run sv-lint"
 	@echo "	make sim-test           - run simulation tests"
 	@echo "	make project-clean      - clean up generated files and directories"

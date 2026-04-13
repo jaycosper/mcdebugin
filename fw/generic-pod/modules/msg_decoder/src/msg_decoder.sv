@@ -7,9 +7,12 @@ module msg_decoder (
     input   wire    i_clk,
     input   wire    i_rst_n,
 
+    // Input message interface
     input   wire    i_msg_rdy,
     input   wire [pMSG_DATA_WIDTH-1:0] i_msg,
     output  logic   o_msg_ack,
+
+    // command output
     output  cmd_rsp_t o_cmd,
     output  logic   o_cmd_valid,
     input   wire    i_cmd_complete
@@ -99,6 +102,7 @@ module msg_decoder (
         set_cmd_in_progress = 1'b0;
         case (cstate)
             stIDLE: begin
+                nstate = stIDLE;
                 if (i_msg_rdy && !cmd_in_progress) begin
                     nstate = stHEADER;
                     o_msg_ack = 1'b1; // ack header

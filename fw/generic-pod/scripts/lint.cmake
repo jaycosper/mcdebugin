@@ -8,4 +8,4 @@ if(NOT VERILOG_CODE_LINTER)
     message(FATAL_ERROR "Code linter ${LINTER_APP_NAME} not found. Please install it or ensure it's in your PATH.")
 endif()
 
-set(GLOBAL_LINT_OPTIONS --lint_only)
+set(GLOBAL_LINT_OPTIONS --lint-only)

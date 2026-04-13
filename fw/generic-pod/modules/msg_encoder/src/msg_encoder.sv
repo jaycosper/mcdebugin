@@ -7,64 +7,25 @@ module msg_encoder (
     input   wire        i_clk,
     input   wire        i_rst_n,
 
+    // System response interface
     input   cmd_rsp_t   i_rsp,
     input   wire        i_rsp_ready,
     output  logic       o_rsp_sent,
 
-    // STOPPED HERE!
-    input   wire    i_msg_rdy,
-    input   wire [pMSG_DATA_WIDTH-1:0] i_msg,
-    output  logic   o_msg_ack,
+    // FIFO interface signals
+    output   wire       o_msg_wren,
+    output   wire [pMSG_DATA_WIDTH-1:0] o_msg_data,
+    input  logic        i_msg_stall
 );
-
-    TODO: this needs to be in here if I want to test -- maybe TESTMODE/LOOPBACK flag
-    always_ff @(posedge lvds_clk_slow) begin
-        if (!sys_rst_n) begin
-            gen_data <= '0; // Reset the data to be transmitted
-        end else begin
-            if (sw_state[3] || !link_locked) begin
-                gen_data <= pSYNC_STREAM; // Transmit K28.5 until locked or if switch 3 is active
-            end else begin
-                if (gen_data.data == 8'hFF) begin
-                    gen_data <= pMESSAGE_START; // Transmit K28.1 after reaching max data value
-                end else if (gen_data == pMESSAGE_START) begin
-                    gen_data.is_k <= 1'b0;
-                    gen_data.data <= 'h0;
-                end else begin
-                    gen_data.is_k <= 1'b0;
-                    gen_data.data <= gen_data.data + 1'b1; // Increment the data to be transmitted
-                end
-                gen_data.data <= gen_data.data + 1'b1; // Increment the data to be transmitted
-            end
-        end
-    end
-
-    // lvds_rxtx u_lvd_rxtx (
-    //     .i_clk(sys_clk),
-    //     .i_rst_n(sys_rst_n),
-    //     .i_frame_clk(lvds_clk_slow),
-
-    //     .o_lvds_clk(o_lvds_clk),
-    //     .i_lvds_rx(i_lvds_rx),
-    //     .o_lvds_tx(o_lvds_tx),
-
-    //     // clocked in i_frame_clk domain
-    //     .o_link_locked(link_locked),
-    //     .i_datain(gen_data),
-    //     .o_dataout(rcvd_data)
-    // );
 
     // State machine for decoding incoming messages
     // Once locked, data transmission is expected to be stable
-    typedef enum logic[2:0] {stIDLE, stHEADER, stPAYLOAD, stCRC, stCHECKCRC} state_t;
+    typedef enum logic[1:0] {stIDLE, stHEADER, stSEND, stCRC} state_t;
     state_t nstate, cstate;
 
-    // header_t hdr;
-    msg_data_t payload [0:pMAX_PAYLOAD_DW-1];
-    // crc_t crc;
-    cmd_rsp_t cmd;
-    logic latch_hdr, latch_payload, latch_crc, clear_crc;
-    logic set_cmd_in_progress, clear_cmd_in_progress, cmd_in_progress;
+    logic [7:0] data_length; // maximum payload + header + CRC is 256 bytes, so 8 bits is sufficient to count data words
+    logic latch_payload_length;
+    logic rsp_complete;
 
     // State transition logic
     always_ff @(posedge i_clk) begin
@@ -77,39 +38,21 @@ module msg_encoder (
 
     always_ff @(posedge i_clk) begin
         if (!i_rst_n) begin
-            cmd.hdr <= '0;
-            cmd.crc <= '0;
-            cmd_in_progress <= 1'b0;
         end else begin
-            if (latch_hdr) begin
-                cmd.hdr <= i_msg; // latch header
-            end
-            if (latch_payload) begin
-                cmd.payload[payload_cntr[4:0]] <= i_msg; // latch payload data
-                payload[payload_cntr[4:0]] <= i_msg; // latch payload data
-            end
-            if (latch_crc) begin
-                cmd.crc <= i_msg; // latch CRC
-            end else if (clear_crc) begin
-                cmd.crc <= '0; // test code
-            end
-            if (set_cmd_in_progress) begin
-                cmd_in_progress <= 1'b1; // set command ready after CRC check
-            end
-            if (clear_cmd_in_progress) begin
-                cmd_in_progress <= 1'b0; // clear command ready after processing
+            if (latch_payload_length) begin
+                data_length <= i_rsp.hdr.payload_length + 1; // latch payload length from header, add 1 for header
             end
         end
     end
     // Counter logic for counting payload data words
     logic reset_cntr, inc_cntr;
-    logic [pPAYLOAD_LENGTH_WIDTH-1:0] payload_cntr;
+    logic [pPAYLOAD_LENGTH_WIDTH-1:0] data_cntr;
 
     always_ff @(posedge i_clk) begin
         if (reset_cntr) begin
-            payload_cntr <= 'h0;
+            data_cntr <= 'h0;
         end else if (inc_cntr) begin
-            payload_cntr <= payload_cntr + 1'b1;
+            data_cntr <= data_cntr + 1'b1;
         end
     end
 
@@ -128,71 +71,51 @@ module msg_encoder (
     // State transition logic
     always_comb begin
         nstate = cstate;
+        o_msg_data = '0;
+        o_msg_wren = 1'b0;
+        latch_payload_length = 1'b0;
         reset_cntr = 1'b0;
         inc_cntr = 1'b0;
-        o_msg_ack = 1'b0;
-        latch_hdr = 1'b0;
-        latch_payload = 1'b0;
-        latch_crc = 1'b0;
+        rsp_complete = 1'b0;
         inc_error = 1'b0;
-        set_cmd_in_progress = 1'b0;
+
         case (cstate)
             stIDLE: begin
-                if (i_msg_rdy && !cmd_in_progress) begin
+                nstate = stIDLE;
+                if (i_rsp_ready && !i_msg_stall) begin
                     nstate = stHEADER;
-                    o_msg_ack = 1'b1; // ack header
-                    latch_hdr = 1'b1; // latch header
                 end
             end
             stHEADER: begin
                 // wait for time before checking data
+                nstate = stHEADER;
+                latch_payload_length = 1'b1;
                 reset_cntr = 1'b1;
-                if (cmd.hdr.marker == pHEADER_MARKER_VALID) begin
-                    if (i_msg_rdy) begin
-                        if (cmd.hdr.payload_length > pPAYLOAD_LENGTH_WIDTH'(pMAX_PAYLOAD_DW)) begin
-                            inc_error = 1'b1;
-                            nstate = stIDLE;
-                        end else if (cmd.hdr.payload_length == 0) begin
-                            // no playload, skip to CRC check
-                            o_msg_ack = 1'b1; // keep acking data while available
-                            nstate = stCHECKCRC;
-                            latch_crc = 1'b1; // latch CRC data
-                        end else begin
-                            nstate = stPAYLOAD;
-                        end
-                    end
-                end else begin
-                    // invalid header, go back to idle
-                    inc_error = 1'b1;
-                    nstate = stIDLE;
+                if (!i_msg_stall) begin
+                    nstate = stSEND;
                 end
             end
-            stPAYLOAD: begin
-                nstate = stPAYLOAD;
-                o_msg_ack = i_msg_rdy; // ack data while available
-                if (i_msg_rdy && o_msg_ack) begin
-                    inc_cntr = 1'b1;
-                    latch_payload = 1'b1; // latch payload data
-                    if (payload_cntr == cmd.hdr.payload_length-1) begin
-                        nstate = stCRC;
-                    end
+            stSEND: begin
+                nstate = stSEND;
+                o_msg_wren = i_msg_stall ? 1'b0 : 1'b1;
+                o_msg_data = (data_cntr == 0) ? i_rsp.hdr : i_rsp.payload[pPAYLOAD_LENGTH_WIDTH'(data_cntr-1'b1)];
+                inc_cntr = i_msg_stall ? 1'b0 : 1'b1;
+                if (!i_msg_stall && data_cntr >= data_length-1) begin
+                    nstate = stCRC;
+                end
+                if (data_length > $size(data_length)'(pMAX_PAYLOAD_DW)+1'b1) begin // payload length + header exceeds max
+                    nstate = stIDLE;
+                    inc_error = 1'b1;
+                    rsp_complete = 1'b1;
                 end
             end
             stCRC: begin
                 nstate = stCRC;
-                o_msg_ack = i_msg_rdy; // ack data while available
-                if (i_msg_rdy && o_msg_ack) begin
-                    latch_crc = 1'b1; // latch CRC data
-                    nstate = stCHECKCRC;
-                end
-            end
-            stCHECKCRC: begin
-                // Calc CRC and compare with expected value (stubbed for now)
-                nstate = stIDLE; // go back to idle after CRC check
-                if (cmd.crc != 'hDEADBEEF) begin // dummy CRC check
-                    inc_error = 1'b1; // increment error counter on CRC mismatch
-                end else begin
-                    set_cmd_in_progress = 1'b1;
+                o_msg_wren = i_msg_stall ? 1'b0 : 1'b1;
+                o_msg_data = pMSG_DATA_WIDTH'('hCAFED00D);
+                if (!i_msg_stall) begin
+                    nstate = stIDLE;
+                    rsp_complete = 1'b1;
                 end
             end
             default: begin
@@ -202,9 +125,16 @@ module msg_encoder (
         endcase
     end
 
-    assign o_cmd = cmd;
-    assign o_cmd_valid = cmd_in_progress;
-    assign clear_cmd_in_progress = i_cmd_complete;
+    always_ff @(posedge i_clk) begin
+        if (!i_rst_n) begin
+            o_rsp_sent <= 1'b0;
+        end else begin
+            o_rsp_sent <= 1'b0;
+            if (rsp_complete) begin
+                o_rsp_sent <= 1'b1;
+            end
+        end
+    end
 
 endmodule
 

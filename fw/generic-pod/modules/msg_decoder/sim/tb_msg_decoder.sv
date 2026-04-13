@@ -12,6 +12,7 @@ module tb_msg_decoder;
     protocol_pkg::msg_data_t msg, wr_data;
     logic rdack, empty;
     protocol_pkg::cmd_rsp_t cmd;
+    logic cmd_valid, cmd_complete;
     logic [7:0] error_count;
 
     // ────────────────────────────────────────────────
@@ -23,10 +24,10 @@ module tb_msg_decoder;
         .i_msg_rdy  (!empty),
         .i_msg      (msg),
         .o_msg_ack  (rdack),
-        .o_cmd      (cmd),
-        .o_header   (),
-        .i_datain   ('X),
-        .o_dataout  ()
+    // command output
+        .o_cmd          (cmd),
+        .o_cmd_valid    (cmd_valid),
+        .i_cmd_complete (cmd_complete)
     );
 
     // 100 MHz clock (just for style — not required for this DUT)
@@ -57,16 +58,16 @@ module tb_msg_decoder;
 
     function automatic int check_output(protocol_pkg::cmd_rsp_t expected_msg);
         int errors = 0;
-        if (dut.cmd.hdr == expected_msg.hdr) begin
+        if (cmd.hdr == expected_msg.hdr) begin
             //$display("Header correctly decoded: %h", dut.hdr);
         end else begin
-            $display("%0t: ERROR! Header mismatch. Expected %h but got %h", $time, expected_msg.hdr, dut.cmd.hdr);
+            $display("%0t: ERROR! Header mismatch. Expected %h but got %h", $time, expected_msg.hdr, cmd.hdr);
             errors++;
         end
-        if (dut.cmd.crc == expected_msg.crc) begin
+        if (cmd.crc == expected_msg.crc) begin
             //$display("CRC correctly decoded: %h", dut.crc);
         end else begin
-            $display("%0t: ERROR! CRC mismatch. Expected %h but got %h", $time, expected_msg.crc, dut.cmd.crc);
+            $display("%0t: ERROR! CRC mismatch. Expected %h but got %h", $time, expected_msg.crc, cmd.crc);
             errors++;
         end
         return errors;
@@ -98,13 +99,17 @@ module tb_msg_decoder;
         push_message(test_msg.hdr, 0); // header with no stall
         push_message(test_msg.crc, 0); // CRC with no stall
         // clock DUT and check output
-        while (!dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
+        while (!cmd_valid) @(negedge clk); // wait for DUT to finish processing
         if (fifo.size() != 0) begin
             $display("%0t: ERROR! Expected input data to be read out but found %0d items remaining", $time, fifo.size());
             test_errors += fifo.size();
         end
         test_errors += check_output(test_msg);
-        while (dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
+        repeat ($urandom_range(10, 50)) @(negedge clk); // arbitrary command processing time
+        cmd_complete = 1'b1;
+        @(negedge clk); // wait for DUT to finish processing
+        cmd_complete = 1'b0;
+        while (cmd_valid) @(negedge clk); // wait for DUT to finish processing
 
         repeat (10) @(negedge clk);
         test_num = 2;
@@ -125,13 +130,17 @@ module tb_msg_decoder;
         push_message(test_msg.crc, 0); // CRC with no stall
 
         // clock DUT and check output
-        while (!dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
+        while (!cmd_valid) @(negedge clk); // wait for DUT to finish processing
         if (fifo.size() != 0) begin
             $display("%0t: ERROR! Expected input data to be read out but found %0d items remaining", $time, fifo.size());
             test_errors += fifo.size();
         end
         test_errors += check_output(test_msg);
-        while (dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
+        repeat ($urandom_range(10, 50)) @(negedge clk); // arbitrary command processing time
+        cmd_complete = 1'b1;
+        @(negedge clk); // wait for DUT to finish processing
+        cmd_complete = 1'b0;
+        while (cmd_valid) @(negedge clk); // wait for DUT to finish processing
 
         repeat (10) @(negedge clk);
         test_num = 3;
@@ -152,13 +161,17 @@ module tb_msg_decoder;
         push_message(test_msg.crc, 0); // CRC with no stall
 
         // clock DUT and check output
-        while (!dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
+        while (!cmd_valid) @(negedge clk); // wait for DUT to finish processing
         if (fifo.size() != 0) begin
             $display("%0t: ERROR! Expected input data to be read out but found %0d items remaining", $time, fifo.size());
             test_errors += fifo.size();
         end
         test_errors += check_output(test_msg);
-        while (dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
+        repeat ($urandom_range(10, 50)) @(negedge clk); // arbitrary command processing time
+        cmd_complete = 1'b1;
+        @(negedge clk); // wait for DUT to finish processing
+        cmd_complete = 1'b0;
+        while (cmd_valid) @(negedge clk); // wait for DUT to finish processing
 
         repeat (10) @(negedge clk);
         test_num = 4;
@@ -179,13 +192,17 @@ module tb_msg_decoder;
         push_message(test_msg.crc, 2);
 
         // clock DUT and check output
-        while (!dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
+        while (!cmd_valid) @(negedge clk); // wait for DUT to finish processing
         if (fifo.size() != 0) begin
             $display("%0t: ERROR! Expected input data to be read out but found %0d items remaining", $time, fifo.size());
             test_errors += fifo.size();
         end
         test_errors += check_output(test_msg);
-        while (dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
+        repeat ($urandom_range(10, 50)) @(negedge clk); // arbitrary command processing time
+        cmd_complete = 1'b1;
+        @(negedge clk); // wait for DUT to finish processing
+        cmd_complete = 1'b0;
+        while (cmd_valid) @(negedge clk); // wait for DUT to finish processing
 
         repeat (10) @(negedge clk);
         test_num = 5;
@@ -206,13 +223,17 @@ module tb_msg_decoder;
         push_message(test_msg.crc, $urandom_range(0, 5));
 
         // clock DUT and check output
-        while (!dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
+        while (!cmd_valid) @(negedge clk); // wait for DUT to finish processing
         if (fifo.size() != 0) begin
             $display("%0t: ERROR! Expected input data to be read out but found %0d items remaining", $time, fifo.size());
             test_errors += fifo.size();
         end
         test_errors += check_output(test_msg);
-        while (dut.cmd_ready) @(negedge clk); // wait for DUT to finish processing
+        repeat ($urandom_range(10, 50)) @(negedge clk); // arbitrary command processing time
+        cmd_complete = 1'b1;
+        @(negedge clk); // wait for DUT to finish processing
+        cmd_complete = 1'b0;
+        while (cmd_valid) @(negedge clk); // wait for DUT to finish processing
 
         // Final report
         $display("");
