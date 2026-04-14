@@ -147,11 +147,10 @@ assign ob_msg_ready = !ob_fifo_empty;
 stream_encoder u_stream_encoder (
     .i_clk          (i_frame_clk),
     .i_rst_n        (i_rst_n),
-    .o_data         (datain),
     .i_msg_ready    (ob_msg_ready),
     .o_rden         (ob_ack),
-    .i_wr_data      (ob_data),
-    .i_error_count  (ob_error_count)
+    .i_rd_data      (ob_data),
+    .o_data         (datain)
 );
 
 endmodule
