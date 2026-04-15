@@ -18,8 +18,8 @@ module top (
     main_pll u_clk (
         .areset(!i_resetn),
         .inclk0(i_clk),
-        .c0(sys_clk),
-        .c1(lvds_clk_slow),
+        .c0(sys_clk),       // 125MHz
+        .c1(lvds_clk_slow), // 25MHz for LVDS
         .locked(sys_rst_n)
     );
 
@@ -59,21 +59,65 @@ module top (
         end
     end
 
+    // Active low LEDs
+    localparam logic LED_ON = 1'b0;
+    localparam logic LED_OFF = 1'b1;
     // use upper bits of counter to drive LEDs, creating a slow counting effect
-    assign o_leds = (sw_state[2]) ? counter[23:19] : rcvd_data.data[7:3]; // switch between counter and received data for LEDs
+    assign o_leds[4:1] = (sw_state[2]) ? counter[23:20] : rcvd_data.data[7:4]; // switch between counter and received data for LEDs
+    assign o_leds[5] = (link_locked) ? LED_ON : LED_OFF; // LED 5 indicates link lock status
 
-    logic cmd_valid, rsp_ready, rsp_sent;
-    cmd_rsp_t cmd, rsp;
-    logic cmd_complete;
+    // Received command from host
+    logic cmd_valid;
+    cmd_rsp_t cmd;
+    logic cmd_complete = 1'b0;
+    // Generated response to host
+    logic rsp_ready = 1'b0;
+    cmd_rsp_t rsp = '{default:0};
+    logic rsp_sent;
+
+    typedef enum logic[1:0] {stIDLE, stCMD, stRSP, stRSPSENT} test_sm_t;
+    test_sm_t cstate;
+    // Testing loopback
+    always_ff @(posedge sys_clk) begin
+        if (!sys_rst_n) begin
+            cstate <= stIDLE;
+            cmd_complete <= 1'b0;
+            rsp_ready <= 1'b0;
+            rsp <= '{default:0};
+        end else begin
+            cmd_complete <= 1'b0; // default to not complete, will be set to 1 when a command is processed
+            rsp_ready <= 1'b0;
+            case(cstate)
+                stIDLE: begin
+                    if (cmd_valid) begin
+                        cstate <= stCMD;
+                    end
+                end
+                stCMD: begin
+                    rsp <= cmd; // Loopback: echo the command as the response
+                    cstate <= stRSP;
+                end
+                stRSP: begin
+                    rsp_ready <= 1'b1; // Indicate that response is ready to be sent
+                    cstate <= stRSPSENT;
+                end
+                stRSPSENT: begin
+                    if (rsp_sent) begin
+                        cstate <= stIDLE;
+                    end
+                end
+            endcase
+        end
+    end
 
     pod_protocol u_pod_protocol (
-        .i_clk(i_clk),
-        .i_frame_clk(i_frame_clk),
-        .i_rst_n(sys_rst_n),
+        .i_clk          (sys_clk),
+        .i_frame_clk    (lvds_clk_slow),
+        .i_rst_n        (sys_rst_n),
         // physical interface
-        .o_lvds_clk(o_lvds_clk),
-        .i_lvds_rx(i_lvds_rx),
-        .o_lvds_tx(i_lvds_tx),
+        .o_lvds_clk     (o_lvds_clk),
+        .i_lvds_rx      (i_lvds_rx),
+        .o_lvds_tx      (o_lvds_tx),
         // system interfaces - command
         .o_cmd_valid    (cmd_valid),
         .o_cmd          (cmd),
@@ -81,7 +125,9 @@ module top (
         // system interfaces - response
         .i_rsp_ready    (rsp_ready),
         .i_rsp          (rsp),
-        .o_rsp_sent     (rsp_sent) // not sure if this is necessary
+        .o_rsp_sent     (rsp_sent), // not sure if this is necessary
+        // misc
+        .o_link_locked  (link_locked)
     );
 endmodule
 

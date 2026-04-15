@@ -40,7 +40,7 @@ module msg_encoder (
         if (!i_rst_n) begin
         end else begin
             if (latch_payload_length) begin
-                data_length <= i_rsp.hdr.payload_length + 1; // latch payload length from header, add 1 for header
+                data_length <= i_rsp.hdr.payload_length + $bits(data_length)'(1); // latch payload length from header, add 1 for header
             end
         end
     end
@@ -57,8 +57,11 @@ module msg_encoder (
     end
 
     // Counter logic for logging errors (e.g. CRC mismatch, invalid header, etc.)
-    logic reset_error, inc_error;
+    logic reset_error;
+    logic inc_error;
     logic [7:0] error_cntr;
+
+    assign reset_error = !i_rst_n; // || <TBD>
 
     always_ff @(posedge i_clk) begin
         if (reset_error) begin

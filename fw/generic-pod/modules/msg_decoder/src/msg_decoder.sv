@@ -23,11 +23,8 @@ module msg_decoder (
     typedef enum logic[2:0] {stIDLE, stHEADER, stPAYLOAD, stCRC, stCHECKCRC} state_t;
     state_t nstate, cstate;
 
-    // header_t hdr;
-    msg_data_t payload [0:pMAX_PAYLOAD_DW-1];
-    // crc_t crc;
     cmd_rsp_t cmd;
-    logic latch_hdr, latch_payload, latch_crc, clear_crc;
+    logic latch_hdr, latch_payload, latch_crc;
     logic set_cmd_in_progress, clear_cmd_in_progress, cmd_in_progress;
 
     // State transition logic
@@ -50,12 +47,9 @@ module msg_decoder (
             end
             if (latch_payload) begin
                 cmd.payload[payload_cntr[4:0]] <= i_msg; // latch payload data
-                payload[payload_cntr[4:0]] <= i_msg; // latch payload data
             end
             if (latch_crc) begin
                 cmd.crc <= i_msg; // latch CRC
-            end else if (clear_crc) begin
-                cmd.crc <= '0; // test code
             end
             if (set_cmd_in_progress) begin
                 cmd_in_progress <= 1'b1; // set command ready after CRC check
@@ -92,6 +86,7 @@ module msg_decoder (
     // State transition logic
     always_comb begin
         nstate = cstate;
+        reset_error = 1'b0;
         reset_cntr = 1'b0;
         inc_cntr = 1'b0;
         o_msg_ack = 1'b0;

@@ -152,6 +152,7 @@ if {$make_assignments} {
 
     # PIN ASSIGNMENTS
     set_location_assignment PIN_27 -to i_clk
+    set_location_assignment PIN_121 -to i_resetn
     #set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to LED*
     set_location_assignment PIN_132 -to o_leds[1]
     set_location_assignment PIN_134 -to o_leds[2]

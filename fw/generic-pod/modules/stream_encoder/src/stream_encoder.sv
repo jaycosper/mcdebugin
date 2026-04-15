@@ -3,7 +3,7 @@
 
 import protocol_pkg::*;
 
-module stream_decoder (
+module stream_encoder (
     input   logic i_clk,
     input   logic i_rst_n,
     // FIFO interface

@@ -2,7 +2,7 @@
 # #### User Defined Section #####
 # ###############################
 # module name
-set(MODULE_NAME debounce)
+get_filename_component(MODULE_NAME ${CMAKE_CURRENT_LIST_FILE} NAME_WE)
 # # module source files
 set(SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/src/${MODULE_NAME}.sv

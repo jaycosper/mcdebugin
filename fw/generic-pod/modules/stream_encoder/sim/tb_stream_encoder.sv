@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-module tb_stream_decoder;
+module tb_stream_encoder;
 
     // ────────────────────────────────────────────────
     // Signals
@@ -16,7 +16,7 @@ module tb_stream_decoder;
     // ────────────────────────────────────────────────
     // DUT
     // ────────────────────────────────────────────────
-    stream_decoder dut (
+    stream_encoder dut (
         .i_clk  (clk),
         .i_rst_n(rst_n),
         // FIFO interface

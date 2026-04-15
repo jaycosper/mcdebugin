@@ -1,6 +1,8 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
+import protocol_pkg::*;
+
 module pod_protocol (
     input   wire    i_clk,
     input   wire    i_frame_clk,
@@ -8,7 +10,7 @@ module pod_protocol (
     // physical interface
     output  logic   o_lvds_clk,
     input   wire    i_lvds_rx,
-    output  logic   o_lvds_tx
+    output  logic   o_lvds_tx,
     // system interfaces - command
     output  logic       o_cmd_valid,
     output  cmd_rsp_t   o_cmd,
@@ -16,10 +18,12 @@ module pod_protocol (
     // system interfaces - response
     input  wire         i_rsp_ready,
     input  cmd_rsp_t    i_rsp,
-    output  logic       o_rsp_sent
+    output  logic       o_rsp_sent,
+    // misc
+    output logic        o_link_locked
 );
 
-logic link_locked,
+logic link_locked;
 rxtx_data_t datain, dataout;
 
 // physical interface
@@ -69,7 +73,8 @@ ib_xclk_fifo u_ib_msg_fifo (
 );
 
 cmd_rsp_t cmd;
-logic cmd_valid, cmd_complete;
+logic cmd_valid;
+logic cmd_complete = 1'b0;
 
 msg_decoder u_msg_decoder (
     .i_clk          (i_clk),
@@ -77,7 +82,7 @@ msg_decoder u_msg_decoder (
     .i_msg_rdy      (!ib_fifo_empty),
     .i_msg          (ib_fifo_rd_data),
     .o_msg_ack      (ib_ack),
-    .o_cmd          (o_cmd)
+    .o_cmd          (o_cmd),
     .o_cmd_valid    (o_cmd_valid),
     .i_cmd_complete (i_cmd_complete)
 );
@@ -108,20 +113,20 @@ msg_decoder u_msg_decoder (
 // ******
 
 // Out-bound (OB) message path: system -> (response FIFO) -> message encoder -> OB FIFO -> stream encoder -> LVDS TX
-cmd_rsp_t rsp;
-logic rsp_ready, rsp_sent;
 logic ob_fifo_wren;
 logic [31:0] ob_fifo_wr_data;
 logic ob_fifo_full;
 
-rsp_encoder u_msg_encoder (
+msg_encoder u_msg_encoder (
     .i_clk          (i_clk),
     .i_rst_n        (i_rst_n),
-    .o_rsp          (rsp),
-    .o_rsp_ready    (rsp_ready),
-    .i_rsp_sent     (rsp_sent),
+    // System response interface
+    .i_rsp          (i_rsp),
+    .i_rsp_ready    (i_rsp_ready),
+    .o_rsp_sent     (o_rsp_sent),
+    // FIFO interface signals
     .o_msg_wren     (ob_fifo_wren),
-    .o_msg          (ob_fifo_wr_data),
+    .o_msg_data     (ob_fifo_wr_data),
     .i_msg_stall    (ob_fifo_full)
 );
 

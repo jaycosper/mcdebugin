@@ -2,7 +2,7 @@
 # #### User Defined Section #####
 # ###############################
 # module name
-set(MODULE_NAME module_template)
+get_filename_component(MODULE_NAME ${CMAKE_CURRENT_LIST_FILE} NAME_WE)
 # # module source files
 set(SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/src/${MODULE_NAME}.sv
@@ -19,7 +19,7 @@ set(MODULE_FORMAT_OPTIONS )
 set(MODULE_SIM_OPTIONS )
 # # module-specific testbench
 set(MODULE_SIM_TESTBENCH
-    ${CMAKE_CURRENT_LIST_DIR}/sim/tb_${MODULE_NAME}.sv
+    #${CMAKE_CURRENT_LIST_DIR}/sim/tb_${MODULE_NAME}.sv
 )
 # ###############################
 

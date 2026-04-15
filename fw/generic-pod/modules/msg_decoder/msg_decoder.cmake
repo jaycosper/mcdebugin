@@ -2,7 +2,7 @@
 # #### User Defined Section #####
 # ###############################
 # module name
-set(MODULE_NAME msg_decoder)
+get_filename_component(MODULE_NAME ${CMAKE_CURRENT_LIST_FILE} NAME_WE)
 # # module source files
 set(SOURCES
     ${INCLUDE_DIR}/protocol_pkg.sv
